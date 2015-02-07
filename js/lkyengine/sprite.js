@@ -19,7 +19,7 @@
       var self = this;
 
       /*
-       * PRIVATE MEMBERS
+       *  PRIVATE MEMBERS
        */
       var engine = engine_;
       var type = Sprite.TypeEnum.EMPTY;
@@ -32,7 +32,7 @@
                     };
 
       /*
-       * PUBLIC MEMBERS
+       *  PUBLIC MEMBERS
        */
       this.topleft = xy;
       this.size = size_;
@@ -45,7 +45,7 @@
                           };                   
 
       /*
-       * PRIVILEGED PUBLIC METHODS
+       *  PRIVILEGED PUBLIC METHODS
        */
       this.get_type = function () { return type; };
       this.get_src = function () { return src; };
@@ -61,6 +61,8 @@
         }
         type = type_;
       };
+      // TODO: change some public properties into private and add these methods:
+      // move_to, resize, re_depth
 
       this.change_img = function (src_) {
         switch (type) {
@@ -87,6 +89,7 @@
                                   this.size[1]);
             }
             break;
+          // TODO: add user customized render type
           case Sprite.TypeEnum.EMPTY:
             break;
           default:
@@ -95,7 +98,7 @@
       };
 
       /*
-       * PRIVATE METHODS
+       *  PRIVATE METHODS
        */
       handler.onload = function (img_) {
         img = img_;

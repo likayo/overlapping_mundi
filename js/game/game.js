@@ -5,7 +5,7 @@
  */
 
 define(["lkyengine", "./objects"],
-function (lkyengine, objects) {
+function (LkyEngine, objects) {
   "use strict";
 
   var Game = {
@@ -14,7 +14,7 @@ function (lkyengine, objects) {
      */
     run: function () {
       var canvas = document.getElementById("myCanvas");
-      var engine = new lkyengine.Engine(canvas);
+      var engine = new LkyEngine.Engine(canvas);
       engine.init();
 
       var frame = function () {

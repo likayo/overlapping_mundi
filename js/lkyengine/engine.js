@@ -1,8 +1,9 @@
 // engine.js
 
 ;define(["game/objects", "./sprite"],
-function (objects, sprite) {
+function (objects, Sprite) {
   "use strict";
+  Sprite = Sprite.Sprite;
 
   /*
    * Engine: deal with graphic and user input
@@ -22,7 +23,7 @@ function (objects, sprite) {
       /*
        * PUBLIC MEMBER
        */
-      // graphic consts
+      // TODO: move graphic consts to Game
       this.consts = {
         text_font: "12pt 微软雅黑",
         layout: {
@@ -64,6 +65,14 @@ function (objects, sprite) {
         render_cards.call(this, state.player_cards, [50, 50]);
         render_card_stack.call(this, this.consts.layout.card_stack.slice(0, 2));
       };
+
+      var sprites = [];
+
+      this.create_sprite = function () {
+        var spr = new Sprite(this, [0, 0], [0, 0], 100);
+        sprites.push(spr);
+        return spr;
+      }
 
       /*
        *  PRIVATE USER INPUT PARSER
@@ -125,8 +134,21 @@ function (objects, sprite) {
                               432);
         }
       };
+
+      this.register_event = function (sprite, event_name, spec) {
+        switch (event_name) {
+          case "onload":
+            // TODO: replace this method with a separate "load_image" method??
+            // spec = { type: "img", src: "...", handler: function(spr, ) }
+            break;
+          default:
+            throw new Error("unknown event type: " + event_name);
+        }
+      };
+
       /*
        *  PRIVATE RENDERING FUNCTION
+       *  TODO: move to Game
        */
 
       var render_cards = function (cards, area_tl) {
