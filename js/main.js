@@ -14,7 +14,6 @@ requirejs.config({
 });
 
 require(["game"], function(game) {
-  console.log(game);
   game.Game.run();
 });
 

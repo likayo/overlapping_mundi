@@ -25,6 +25,7 @@
       var type = Sprite.TypeEnum.EMPTY;
       var src = null;
       var img = null;
+      var user_render = null;  // user-defined render function
       var handler = { // definitions are put below
                       onload: null,
                       onclick: null,
@@ -34,6 +35,7 @@
       /*
        *  PUBLIC MEMBERS
        */
+
       this.topleft = xy;
       this.size = size_;
       this.depth = depth_;
@@ -47,6 +49,7 @@
       /*
        *  PRIVILEGED PUBLIC METHODS
        */
+
       this.get_type = function () { return type; };
       this.get_src = function () { return src; };
       this.img_loaded = function () { return img !== null; };
@@ -59,11 +62,17 @@
           case Sprite.TypeEnum.STATIC_IMG:
             src = img = null;
             break;
+          case Sprite.TypeEnum.USER_CUSTIOMIZED:
+            user_render = null;
+            break;
           default:
             throw new Error("unknwon sprite type");
         }
         type = type_;
       };
+
+      this.set_user_render = function (impl) { user_render = impl; };
+
       // TODO: change some public properties into private and add these methods:
       // move_to, resize, redepth
 
@@ -72,19 +81,15 @@
           case Sprite.TypeEnum.STATIC_IMG:
             src = src_;
             img = null;
-            // TODO add loading handler
             engine.register_event(this, "load",
                                   {
                                     type: "img",
                                     src: src_,
-                                    handler: function (event_, img_) {
-                                      // this <- set to this sprite
-                                      img = img_;
-                                    }
+                                    callback: handler.onload
                                   });
             break;
           default:
-            throw new Error("illegal sprite type");
+            throw new Error("change_img: illegal sprite type");
         }
       };
 
@@ -101,7 +106,10 @@
                                   this.size[1]);
             }
             break;
-          // TODO: add user customized render type
+          case Sprite.TypeEnum.USER_CUSTIOMIZED:
+            if (user_render !== null) {
+              user_render.call(this, ctx);
+            }
           case Sprite.TypeEnum.EMPTY:
             break;
           default:
@@ -112,19 +120,22 @@
       /*
        *  PRIVATE METHODS
        */
-      handler.onload = function (img_) {
+
+      handler.onload = function (event_, img_) {
         img = img_;
         if (self.user_handler.onload) {
-          self.user_handler.onload.call(self, img_);
+          self.user_handler.onload.call(self, event_, img_);
         }
       };
 
     };  // End Sprite constructor
     Sprite.TypeEnum = Object.freeze({
                                       EMPTY: 0,
-                                      STATIC_IMG: 1
+                                      STATIC_IMG: 1,
+                                      USER_CUSTIOMIZED: 100
                                     });
     return Sprite;
+
   })();
 
   // Module content

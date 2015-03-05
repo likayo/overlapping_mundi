@@ -18,49 +18,39 @@ function (objects, Sprite) {
       /*
        * PRIVATE MEMBER
        */
+      
       var ctx = null;
       var sprites = null;
 
       /*
        * PUBLIC MEMBER
        */
-      // TODO: move graphic consts to Game
-      this.consts = {
-        text_font: "12pt 微软雅黑",
-        layout: {
-          canvas: [700, 450],
-          //          tl_x, tl_y, width, height
-          card_stack: [400, 200, 80,  100],
-          map:        [0,   0,   670, 432]
-        }
-      };
+
       this.canvas  = canvas;
 
       /*
        * PRIVILEGED PUBLIC METHODS
        */
-      this.init = function () {
-        this.canvas.width = this.consts.layout.canvas[0];
-        this.canvas.height = this.consts.layout.canvas[1];
+      this.init = function (size) {
+        this.canvas.width = size[0];
+        this.canvas.height = size[1];
         ctx = this.canvas.getContext("2d");
         state.reset();
         user_input.reset();
         sprites = [];
+
+        // Enable mouse event detection
         clickables = [];
         this.canvas.addEventListener("click", handler.onclick, false);
-        clickables.push({
-                          rect: this.consts.layout.card_stack,
-                          callback: function (event) {user_input.card_stack_pressed = true;}
-                        });
+        // clickables.push({
+        //                   rect: this.consts.layout.card_stack,
+        //                   callback: function (event) {user_input.card_stack_pressed = true;}
+        //                 });
         // var img = document.createElement("img");
         // // TODO: modify callback to show the img after loading
         // img.addEventListener("load", function (event) {handler.onload(event, img);}, false);
         // img.src = "img/map.jpg";
-        var map_sprite = this.create_sprite(this.consts.layout.map.slice(0, 2),
-                                            this.consts.layout.map.slice(2, 4),
-                                            0,
-                                            Sprite.TypeEnum.STATIC_IMG);
-        map_sprite.change_img("img/map.jpg");
+        
       };
 
       this.create_sprite = function (xy, size, depth, type) {
@@ -75,12 +65,11 @@ function (objects, Sprite) {
       };
 
       this.render = function () {
-        ctx.clearRect(0, 0, this.consts.layout.canvas[0], this.consts.layout.canvas[1]);
+        ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         for (var i = 0; i < sprites.length; i++) {
           sprites[i].render(ctx);
         }
-        render_cards.call(this, state.player_cards, [50, 50]);
-        render_card_stack.call(this, this.consts.layout.card_stack.slice(0, 2));
+        // render_cards.call(this, state.player_cards, [50, 50]);
       };
 
       /*
@@ -149,14 +138,23 @@ function (objects, Sprite) {
           case "load":
             // TODO: if necessary, this will be encapsulated by a separate
             // "load_image" method
-            // spec = { type: "img", src: "...", handler: function(spr, ) }
+            // spec = { type: "img", src: "...", callback: function(event, img) }
             var img = document.createElement("img");
             img.addEventListener("load",
                                   function (event) {
-                                    spec.handler.apply(sprite, [event, img]);
+                                    spec.callback.apply(sprite, [event, img]);
                                   },
                                   false);
             img.src = spec.src;
+            break;
+          case "click":
+            // spec = { callback: function (event) }
+            console.log(sprite.topleft.concat(sprite.size));
+            clickables.push({
+                              rect: sprite.topleft.concat(sprite.size),
+                              // callback: function (event) {user_input.card_stack_pressed = true;}
+                              callback: spec.callback
+                            });
             break;
           default:
             throw new Error("unknown event type: " + event_name);
@@ -189,40 +187,16 @@ function (objects, Sprite) {
         }
       };
 
-      var render_card_stack = function (area_tl) {
-        var i,
-            topleft,
-            card_size = [60, 80],
-            interval = 3,
-            n = 5;
-
-        ctx.strokeStyle = "red";
-        ctx.lineWidth   = 2;
-        ctx.fillStyle   = "white";
-        ctx.font        = this.consts.text_font;
-
-        for (i = n - 1; i >= 0; i--) {
-          topleft = [area_tl[0] + i * interval,
-                     area_tl[1] + i * interval];
-          ctx.strokeRect(topleft[0], topleft[1],
-                         card_size[0], card_size[1]);
-          ctx.fillRect(topleft[0] + 1,
-                       topleft[1] + 1,
-                       card_size[0] - 2,
-                       card_size[1] - 2);
-        }
-        ctx.fillStyle = "black";
-        ctx.fillText("Draw",
-                     area_tl[0] + card_size[0] / 5,
-                     area_tl[1] + card_size[1] / 2);
-      };
     };  // End Engine constructor
     
     return Engine;
+
   })();
 
+  // return module object
   return {
-    Engine: Engine
+    Engine: Engine,
+    Sprite: Sprite
   };
 
 });
