@@ -18,7 +18,8 @@ function (objects, Sprite) {
       /*
        * PRIVATE MEMBER
        */
-      var ctx = undefined;
+      var ctx = null;
+      var sprites = null;
 
       /*
        * PUBLIC MEMBER
@@ -44,17 +45,30 @@ function (objects, Sprite) {
         ctx = this.canvas.getContext("2d");
         state.reset();
         user_input.reset();
+        sprites = [];
         clickables = [];
         this.canvas.addEventListener("click", handler.onclick, false);
         clickables.push({
                           rect: this.consts.layout.card_stack,
                           callback: function (event) {user_input.card_stack_pressed = true;}
                         });
-        var img = document.createElement("img");
-        // TODO: modify callback to show the img after loading
-        img.addEventListener("load", function (event) {handler.onload(event, img);}, false);
-        img.src = "img/map.jpg";
+        // var img = document.createElement("img");
+        // // TODO: modify callback to show the img after loading
+        // img.addEventListener("load", function (event) {handler.onload(event, img);}, false);
+        // img.src = "img/map.jpg";
+        var map_sprite = this.create_sprite(this.consts.layout.map.slice(0, 2),
+                                            this.consts.layout.map.slice(2, 4),
+                                            0,
+                                            Sprite.TypeEnum.STATIC_IMG);
+        map_sprite.change_img("img/map.jpg");
       };
+
+      this.create_sprite = function (xy, size, depth, type) {
+        var spr = new Sprite(this, xy, size, depth);
+        spr.set_type(type);
+        sprites.push(spr);
+        return spr;
+      }
 
       this.update = function () {
         change_state.call(this);
@@ -62,17 +76,12 @@ function (objects, Sprite) {
 
       this.render = function () {
         ctx.clearRect(0, 0, this.consts.layout.canvas[0], this.consts.layout.canvas[1]);
+        for (var i = 0; i < sprites.length; i++) {
+          sprites[i].render(ctx);
+        }
         render_cards.call(this, state.player_cards, [50, 50]);
         render_card_stack.call(this, this.consts.layout.card_stack.slice(0, 2));
       };
-
-      var sprites = [];
-
-      this.create_sprite = function () {
-        var spr = new Sprite(this, [0, 0], [0, 0], 100);
-        sprites.push(spr);
-        return spr;
-      }
 
       /*
        *  PRIVATE USER INPUT PARSER
@@ -81,8 +90,8 @@ function (objects, Sprite) {
 
       var state = {
         reset: function () {
-          this.player_cards       = [];
           var Card = objects.Card;
+          this.player_cards       = [];
           this.player_card_stack  = [new Card("A"), new Card("B"), new Card("C"),
                                      new Card("AA"), new Card("BB"), new Card("CC")];
         }
@@ -137,9 +146,17 @@ function (objects, Sprite) {
 
       this.register_event = function (sprite, event_name, spec) {
         switch (event_name) {
-          case "onload":
-            // TODO: replace this method with a separate "load_image" method??
+          case "load":
+            // TODO: if necessary, this will be encapsulated by a separate
+            // "load_image" method
             // spec = { type: "img", src: "...", handler: function(spr, ) }
+            var img = document.createElement("img");
+            img.addEventListener("load",
+                                  function (event) {
+                                    spec.handler.apply(sprite, [event, img]);
+                                  },
+                                  false);
+            img.src = spec.src;
             break;
           default:
             throw new Error("unknown event type: " + event_name);

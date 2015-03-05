@@ -56,13 +56,16 @@
           case Sprite.TypeEnum.EMPTY:
             src = img = null;
             break;
+          case Sprite.TypeEnum.STATIC_IMG:
+            src = img = null;
+            break;
           default:
             throw new Error("unknwon sprite type");
         }
         type = type_;
       };
       // TODO: change some public properties into private and add these methods:
-      // move_to, resize, re_depth
+      // move_to, resize, redepth
 
       this.change_img = function (src_) {
         switch (type) {
@@ -70,6 +73,15 @@
             src = src_;
             img = null;
             // TODO add loading handler
+            engine.register_event(this, "load",
+                                  {
+                                    type: "img",
+                                    src: src_,
+                                    handler: function (event_, img_) {
+                                      // this <- set to this sprite
+                                      img = img_;
+                                    }
+                                  });
             break;
           default:
             throw new Error("illegal sprite type");
@@ -108,10 +120,10 @@
       };
 
     };  // End Sprite constructor
-    Sprite.prototype.TypeEnum = Object.freeze({
-                                                EMPTY: 0,
-                                                STATIC_IMG: 1
-                                              });
+    Sprite.TypeEnum = Object.freeze({
+                                      EMPTY: 0,
+                                      STATIC_IMG: 1
+                                    });
     return Sprite;
   })();
 
