@@ -18,7 +18,7 @@ function (objects, Sprite) {
       /*
        * PRIVATE MEMBER
        */
-      
+
       var ctx = null;
       var sprites = null;
 
@@ -46,11 +46,6 @@ function (objects, Sprite) {
         //                   rect: this.consts.layout.card_stack,
         //                   callback: function (event) {user_input.card_stack_pressed = true;}
         //                 });
-        // var img = document.createElement("img");
-        // // TODO: modify callback to show the img after loading
-        // img.addEventListener("load", function (event) {handler.onload(event, img);}, false);
-        // img.src = "img/map.jpg";
-        
       };
 
       this.create_sprite = function (xy, size, depth, type) {
@@ -114,12 +109,19 @@ function (objects, Sprite) {
                     rect[1] <= y && y <= rect[1] + rect[3]);
           };
           // console.log(event);
-          for (var i in clickables) {
-            if (in_rect([event.x, event.y], clickables[i].rect)) {
-              // console.log([event.x, event.y]);
-              // console.log(clickables[i].rect);
-              clickables[i].callback(event);
+          var clicked = null;
+          var min_depth = Engine.MaxDepth + 1;
+          for (var i = 0; i < clickables.length; i++) {
+            // TODO: find an uniform way to get mouse position in different browsers.
+            if (in_rect([event.offsetX, event.offsetY], clickables[i].rect)) {
+              if (min_depth > clickables[i].sprite.depth) {
+                clicked = clickables[i];
+                min_depth = clicked.sprite.depth;
+              }
             }
+          }
+          if (clicked) {
+            clicked.callback.call(clicked.sprite, event);
           }
         },
 
@@ -149,9 +151,9 @@ function (objects, Sprite) {
             break;
           case "click":
             // spec = { callback: function (event) }
-            console.log(sprite.topleft.concat(sprite.size));
             clickables.push({
                               rect: sprite.topleft.concat(sprite.size),
+                              sprite: sprite,
                               // callback: function (event) {user_input.card_stack_pressed = true;}
                               callback: spec.callback
                             });
@@ -188,7 +190,7 @@ function (objects, Sprite) {
       };
 
     };  // End Engine constructor
-    
+    Engine.MaxDepth = 10000;
     return Engine;
 
   })();

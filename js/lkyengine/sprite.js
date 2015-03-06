@@ -75,6 +75,7 @@
 
       // TODO: change some public properties into private and add these methods:
       // move_to, resize, redepth
+      // because these properties will affect the clickable area and priority.
 
       this.change_img = function (src_) {
         switch (type) {
@@ -92,6 +93,29 @@
             throw new Error("change_img: illegal sprite type");
         }
       };
+
+      this.change_handler = function (event_name, handler_) {
+        switch (event_name) {
+          case "load":
+            if (handler_) {
+              this.user_handler.onload = handler_;
+            } else {
+              this.user_handler.onload = null;
+            }
+            break;
+          case "click":
+            if (handler_) {
+              this.user_handler.onclick = handler_;
+              engine.register_event(this, "click", { callback: handler.onclick });
+            } else {
+              throw new Error("change_handler: unregistering handler is unimplemented yet");
+            }
+            break;
+          default:
+            throw new Error("unknown event type: " + event_name);
+        }
+
+      }
 
       this.render = function(ctx) {
         if (this.invisible) {
@@ -125,6 +149,12 @@
         img = img_;
         if (self.user_handler.onload) {
           self.user_handler.onload.call(self, event_, img_);
+        }
+      };
+
+      handler.onclick = function (event_) {
+        if (self.user_handler.onclick) {
+          self.user_handler.onclick.call(self, event_);
         }
       };
 
