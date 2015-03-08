@@ -9,24 +9,35 @@ function (LkyEngine, objects) {
   "use strict";
 
   /*
-   *  PRIVATE USER INPUT PARSER
-   *  parse user input and change engine state
+   *  PRIVATE MEMBERS
    */
 
+  // Game state
   var state = {
+    // Will be reset at the start of game
     reset: function () {
       var Card = objects.Card;
+      this.reimu_xy           = [0, 0];
       this.player_cards       = [];
       this.player_card_stack  = [new Card("A"), new Card("B"), new Card("C"),
                                  new Card("AA"), new Card("BB"), new Card("CC")];
     }
   };
 
+  // User input in a frame
   var user_input = {
+    // Will be reset at the start of each frame
     reset: function () {
+      this.board_clicked      = null;
       this.card_stack_pressed = false;
     }
   };
+
+  // Sprites
+  var map_sprite = null,
+      reimu_sprite = null,
+      card_stack_sprite = null,
+      cards_sprite = null;
 
   /*
    *  PRIVATE RENDERING FUNCTION
@@ -100,11 +111,6 @@ function (LkyEngine, objects) {
     },
 
     init: function (engine) {
-      var map_sprite = null,
-          reimu_sprite = null,
-          card_stack_sprite = null,
-          cards_sprite = null;
-
       state.reset();
       user_input.reset();
 
@@ -121,11 +127,7 @@ function (LkyEngine, objects) {
           // TODO: find an uniform way to get mouse position in different browsers.
           var x = Math.floor((event.offsetX - this.topleft[0]) / this.grid_size),
               y = Math.floor((event.offsetY - this.topleft[1]) / this.grid_size);
-          console.log("map: " + JSON.stringify([x, y]));
-          if (reimu_sprite && reimu_sprite.img_loaded()) {
-            reimu_sprite.topleft = [this.topleft[0] + (x + 0.5) * this.grid_size - 36,
-                                    this.topleft[1] + y * this.grid_size - 40];
-          }
+          user_input.board_clicked = [x, y];
         });
       })
 
@@ -161,6 +163,15 @@ function (LkyEngine, objects) {
       if (user_input.card_stack_pressed) {
         state.player_cards = state.player_cards.concat(state.player_card_stack.slice(0, 2));
         state.player_card_stack = state.player_card_stack.slice(2);
+      }
+      if (user_input.board_clicked !== null) {
+        state.reimu_xy = user_input.board_clicked;
+        var x = state.reimu_xy[0];
+        var y = state.reimu_xy[1];
+        if (reimu_sprite && reimu_sprite.img_loaded()) {
+          reimu_sprite.topleft = [map_sprite.topleft[0] + (x + 0.5) * map_sprite.grid_size - 36,
+                                  map_sprite.topleft[1] + y * map_sprite.grid_size - 40];
+        }
       }
       user_input.reset();
     },
