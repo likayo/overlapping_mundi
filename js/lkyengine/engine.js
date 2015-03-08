@@ -21,6 +21,7 @@ function (objects, Sprite) {
 
       var ctx = null;
       var sprites = null;
+      var clickables = null;
 
       /*
        * PUBLIC MEMBER
@@ -35,17 +36,10 @@ function (objects, Sprite) {
         this.canvas.width = size[0];
         this.canvas.height = size[1];
         ctx = this.canvas.getContext("2d");
-        state.reset();
-        user_input.reset();
         sprites = [];
-
-        // Enable mouse event detection
         clickables = [];
+        // Enable mouse event detection
         this.canvas.addEventListener("click", handler.onclick, false);
-        // clickables.push({
-        //                   rect: this.consts.layout.card_stack,
-        //                   callback: function (event) {user_input.card_stack_pressed = true;}
-        //                 });
       };
 
       this.create_sprite = function (xy, size, depth, type) {
@@ -55,51 +49,16 @@ function (objects, Sprite) {
         return spr;
       }
 
-      this.update = function () {
-        change_state.call(this);
-      };
-
       this.render = function () {
         ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         for (var i = 0; i < sprites.length; i++) {
           sprites[i].render(ctx);
         }
-        // render_cards.call(this, state.player_cards, [50, 50]);
-      };
-
-      /*
-       *  PRIVATE USER INPUT PARSER
-       *  parse user input and change engine state
-       */
-
-      var state = {
-        reset: function () {
-          var Card = objects.Card;
-          this.player_cards       = [];
-          this.player_card_stack  = [new Card("A"), new Card("B"), new Card("C"),
-                                     new Card("AA"), new Card("BB"), new Card("CC")];
-        }
-      };
-
-      var user_input = {
-        reset: function () {
-          this.card_stack_pressed = false;
-        }
-      };
-
-      var change_state = function () {
-        if (user_input.card_stack_pressed) {
-          state.player_cards = state.player_cards.concat(state.player_card_stack.slice(0, 2));
-          state.player_card_stack = state.player_card_stack.slice(2);
-        }
-        user_input.reset();
       };
 
       /*
        *  PRIVATE EVENT HANDLER
        */
-
-      var clickables = [];
 
       var handler = {
         onclick: function (event) {
@@ -108,7 +67,6 @@ function (objects, Sprite) {
             return (rect[0] <= x && x <= rect[0] + rect[2] && 
                     rect[1] <= y && y <= rect[1] + rect[3]);
           };
-          // console.log(event);
           var clicked = null;
           var min_depth = Engine.MaxDepth + 1;
           for (var i = 0; i < clickables.length; i++) {
@@ -154,38 +112,11 @@ function (objects, Sprite) {
             clickables.push({
                               rect: sprite.topleft.concat(sprite.size),
                               sprite: sprite,
-                              // callback: function (event) {user_input.card_stack_pressed = true;}
                               callback: spec.callback
                             });
             break;
           default:
             throw new Error("unknown event type: " + event_name);
-        }
-      };
-
-      /*
-       *  PRIVATE RENDERING FUNCTION
-       *  TODO: move to Game
-       */
-
-      var render_cards = function (cards, area_tl) {
-        // console.log(cards);
-        var i,
-            topleft,
-            card_size = [60, 80],
-            interval = 20;
-
-        ctx.strokeStyle = "red";
-        ctx.lineWidth   = 5;
-        ctx.font        = this.consts.text_font;
-        for (i in cards) {
-          topleft = [area_tl[0] + i * card_size[0] + i * interval,
-                     area_tl[1]];
-          ctx.strokeRect(topleft[0], topleft[1],
-                         card_size[0], card_size[1]);
-          ctx.fillText(cards[i].name,
-                      topleft[0] + card_size[0] / 2,
-                      topleft[1] + card_size[1] / 2);
         }
       };
 
