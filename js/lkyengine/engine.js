@@ -1,7 +1,7 @@
 // engine.js
 
-;define(["game/objects", "./sprite"],
-function (objects, Sprite) {
+;define(["./sprite"],
+function (Sprite) {
   "use strict";
   Sprite = Sprite.Sprite;
 
