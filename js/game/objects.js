@@ -24,7 +24,9 @@
 
   })();
 
+  // return module object
   return {
     Card: Card
   };
+  
 });

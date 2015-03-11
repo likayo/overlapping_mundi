@@ -11,12 +11,16 @@ function (LkyEngine, objects) {
   /*
    *  PRIVATE MEMBERS
    */
-
   // Game state
   var state = {
-    // Will be reset at the start of game
+    MainEnum: Object.freeze({
+                              TITLE: 0,
+                              GAME: 1,
+                            }),
+    // Will be called at the start of game
     reset: function () {
       var Card = objects.Card;
+      this.main               = this.MainEnum.TITLE;
       this.reimu_xy           = [0, 0];
       this.player_cards       = [];
       this.player_card_stack  = [new Card("A"), new Card("B"), new Card("C"),
@@ -24,9 +28,9 @@ function (LkyEngine, objects) {
     }
   };
 
-  // User input in a frame
+  // Summarize user inputs in a frame
   var user_input = {
-    // Will be reset at the start of each frame
+    // Will be called at the start of each frame
     reset: function () {
       this.board_clicked      = null;
       this.card_stack_pressed = false;
@@ -42,7 +46,6 @@ function (LkyEngine, objects) {
   /*
    *  PRIVATE RENDERING FUNCTION
    */
-
   var render_cards = function (ctx) {
     // this: cards_sprite
     var i,
@@ -110,6 +113,10 @@ function (LkyEngine, objects) {
       }
     },
 
+    /*
+     * init
+     * Reset the state of game, and initialize the engine and sprites.
+     */
     init: function (engine) {
       state.reset();
       user_input.reset();
@@ -159,6 +166,10 @@ function (LkyEngine, objects) {
       cards_sprite.set_user_render(render_cards);
     },
 
+    /*
+     * update
+     * Update the game state based on the user input.
+     */
     update: function () {
       if (user_input.card_stack_pressed) {
         state.player_cards = state.player_cards.concat(state.player_card_stack.slice(0, 2));
@@ -177,9 +188,9 @@ function (LkyEngine, objects) {
     },
 
     /*
-     * Game main loop
+     * run
+     * The main loop of the game
      */
-
     run: function () {
       var self = this;
       var canvas = document.getElementById("myCanvas");

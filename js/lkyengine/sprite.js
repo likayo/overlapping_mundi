@@ -9,7 +9,8 @@
   var Sprite = (function () {
      /*
       * Sprite(engine, xy, size, depth): 
-      *   create an empty sprite.
+      * Create an empty sprite.
+      * Args:
       *   engine: the engine that this sprite is binded to.
       *   xy: the coordinate of the topleft of sprite.
       *   size: 
@@ -35,7 +36,6 @@
       /*
        *  PUBLIC MEMBERS
        */
-
       this.topleft = xy;
       this.size = size_;
       this.depth = depth_;
@@ -49,7 +49,6 @@
       /*
        *  PRIVILEGED PUBLIC METHODS
        */
-
       this.get_type = function () { return type; };
       this.get_src = function () { return src; };
       this.img_loaded = function () { return img !== null; };
@@ -114,8 +113,7 @@
           default:
             throw new Error("unknown event type: " + event_name);
         }
-
-      }
+      };
 
       this.render = function(ctx) {
         if (this.invisible) {
@@ -144,7 +142,6 @@
       /*
        *  PRIVATE METHODS
        */
-
       handler.onload = function (event_, img_) {
         img = img_;
         if (self.user_handler.onload) {
@@ -172,4 +169,5 @@
   return {
     Sprite: Sprite
   };
+
 });
