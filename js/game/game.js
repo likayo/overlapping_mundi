@@ -35,7 +35,7 @@ function (LkyEngine, objects) {
                                      new Card("AA"), new Card("BB"), new Card("CC")];
           break;
         default:
-          throw "up";
+          throw "state.reset: illegal main state.";
       }
     }
   };

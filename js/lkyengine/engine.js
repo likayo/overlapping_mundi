@@ -139,7 +139,7 @@ function (Sprite) {
                             });
             break;
           default:
-            throw new Error("unknown event type: " + event_name);
+            throw new Error("register_event: unknown event type: " + event_name);
         }
       };
 

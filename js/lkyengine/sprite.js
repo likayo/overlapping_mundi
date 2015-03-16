@@ -111,7 +111,7 @@
             }
             break;
           default:
-            throw new Error("unknown event type: " + event_name);
+            throw new Error("change_handler: unknown event type: " + event_name);
         }
       };
 
@@ -135,7 +135,7 @@
           case Sprite.TypeEnum.EMPTY:
             break;
           default:
-            throw new Error("illegal sprite type");
+            throw new Error("render: illegal sprite type");
         }
       };
 
