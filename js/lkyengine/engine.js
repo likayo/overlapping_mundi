@@ -63,6 +63,37 @@ function (Sprite) {
         return spr;
       };
 
+      this.get_sprite = function (spr) {
+        if (typeof spr === "string") {
+          // TODO: add sprite name support
+        } else if (spr instanceof Sprite) {
+          for (var i = 0; i < sprites.length; i++) {
+            if (spr === sprites[i]) {
+              return sprites[i];
+            }
+          }
+        }
+      };
+
+      this.remove_sprite = function (spr) {
+        if (typeof spr === "string") {
+          this.remove_sprite(this.get_sprite(spr));
+        } else if (spr instanceof Sprite) {
+          for (var i = 0; i < sprites.length; i++) {
+            if (spr === sprites[i]) {
+              sprites.splice(i, 1);
+              break;
+            }
+          }
+          for (var i = 0; i < clickables.length; i++) {
+            if (spr === clickables[i].sprite) {
+              clickables.splice(i, 1);
+              break;
+            }
+          }
+        }
+      };
+
       /*
        * render
        * Redraw the canvas.

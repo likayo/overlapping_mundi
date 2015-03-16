@@ -7,10 +7,13 @@
 define(["lkyengine", "./objects"],
 function (LkyEngine, objects) {
   "use strict";
+  var Card = objects.Card;
 
   /*
    *  PRIVATE MEMBERS
    */
+  var engine = null;
+
   // Game state
   var state = {
     MainEnum: Object.freeze({
@@ -18,13 +21,22 @@ function (LkyEngine, objects) {
                               GAME: 1,
                             }),
     // Will be called at the start of game
-    reset: function () {
-      var Card = objects.Card;
-      this.main               = this.MainEnum.TITLE;
-      this.reimu_xy           = [0, 0];
-      this.player_cards       = [];
-      this.player_card_stack  = [new Card("A"), new Card("B"), new Card("C"),
-                                 new Card("AA"), new Card("BB"), new Card("CC")];
+    reset: function (main_state) {
+      switch (main_state) {
+        case this.MainEnum.TITLE:
+          this.main               = this.MainEnum.TITLE;
+          this.btn_start_game_clicked = false;
+          break;
+        case this.MainEnum.GAME:
+          this.main               = this.MainEnum.GAME;
+          this.reimu_xy           = [0, 0];
+          this.player_cards       = [];
+          this.player_card_stack  = [new Card("A"), new Card("B"), new Card("C"),
+                                     new Card("AA"), new Card("BB"), new Card("CC")];
+          break;
+        default:
+          throw "up";
+      }
     }
   };
 
@@ -32,13 +44,15 @@ function (LkyEngine, objects) {
   var user_input = {
     // Will be called at the start of each frame
     reset: function () {
+      this.new_game_clicked   = null;
       this.board_clicked      = null;
-      this.card_stack_pressed = false;
+      this.card_stack_clicked = false;
     }
   };
 
   // Sprites
-  var map_sprite = null,
+  var btn_start_game_sprite = null,
+      map_sprite = null,
       reimu_sprite = null,
       card_stack_sprite = null,
       cards_sprite = null;
@@ -100,6 +114,22 @@ function (LkyEngine, objects) {
                  this.topleft[1] + card_size[1] / 2);
   };
 
+  var render_bn_start_game = function (ctx) {
+    // this: btn_start_game_sprite
+    ctx.strokeStyle = "red";
+    ctx.lineWidth   = 5;
+    ctx.font        = this.text_font;
+    ctx.fillStyle   = "white";
+    ctx.fillRect(this.topleft[0], this.topleft[1],
+                   this.size[0], this.size[1]);
+    ctx.strokeRect(this.topleft[0], this.topleft[1],
+                   this.size[0], this.size[1]);
+    ctx.fillStyle   = "black";
+    ctx.fillText("Start",
+                this.topleft[0] + this.size[0] / 2,
+                this.topleft[1] + this.size[1] / 2);
+  };
+
   var Game = {
 
     // Graphic constants
@@ -107,9 +137,10 @@ function (LkyEngine, objects) {
       text_font: "12pt 微软雅黑",
       layout: {
         canvas: [700, 500],
-        //          tl_x, tl_y, width, height
-        card_stack: [ 400, 200,  80, 100],
-        map:        [  20,  40, 670, 432]
+        //                tl_x, tl_y, width, height
+        btn_start_game:   [ 300, 200, 100, 100],
+        card_stack:       [ 400, 200,  80, 100],
+        map:              [  20,  40, 670, 432]
       }
     },
 
@@ -117,11 +148,30 @@ function (LkyEngine, objects) {
      * init
      * Reset the state of game, and initialize the engine and sprites.
      */
-    init: function (engine) {
-      state.reset();
+    init: function () {
+      state.reset(state.MainEnum.TITLE);
+      user_input.reset();
+      engine.init(this.consts.layout.canvas);
+
+      btn_start_game_sprite = engine.create_sprite(
+                                this.consts.layout.btn_start_game.slice(0, 2),
+                                this.consts.layout.btn_start_game.slice(2, 4),
+                                0,
+                                LkyEngine.Sprite.TypeEnum.USER_CUSTIOMIZED);
+      btn_start_game_sprite.text_font = this.consts.text_font;
+      btn_start_game_sprite.set_user_render(render_bn_start_game);
+      btn_start_game_sprite.change_handler("click", function (event) {
+        user_input.btn_start_game_clicked = true;
+      });
+    },
+
+    init_game: function () {
+      state.reset(state.MainEnum.GAME);
       user_input.reset();
 
-      engine.init(this.consts.layout.canvas);
+      if (btn_start_game_sprite) {
+        engine.remove_sprite(btn_start_game_sprite);
+      }
       map_sprite = engine.create_sprite(
                       this.consts.layout.map.slice(0, 2),
                       this.consts.layout.map.slice(2, 4),
@@ -136,7 +186,7 @@ function (LkyEngine, objects) {
               y = Math.floor((event.offsetY - this.topleft[1]) / this.grid_size);
           user_input.board_clicked = [x, y];
         });
-      })
+      });
 
       reimu_sprite = engine.create_sprite(
                         [0, 0],
@@ -153,7 +203,7 @@ function (LkyEngine, objects) {
       card_stack_sprite.text_font = this.consts.text_font;
       card_stack_sprite.set_user_render(render_card_stack);
       card_stack_sprite.change_handler("click", function (event) {
-        user_input.card_stack_pressed = true;
+        user_input.card_stack_clicked = true;
       });
 
       cards_sprite = engine.create_sprite(
@@ -171,18 +221,28 @@ function (LkyEngine, objects) {
      * Update the game state based on the user input.
      */
     update: function () {
-      if (user_input.card_stack_pressed) {
-        state.player_cards = state.player_cards.concat(state.player_card_stack.slice(0, 2));
-        state.player_card_stack = state.player_card_stack.slice(2);
-      }
-      if (user_input.board_clicked !== null) {
-        state.reimu_xy = user_input.board_clicked;
-        var x = state.reimu_xy[0];
-        var y = state.reimu_xy[1];
-        if (reimu_sprite && reimu_sprite.img_loaded()) {
-          reimu_sprite.topleft = [map_sprite.topleft[0] + (x + 0.5) * map_sprite.grid_size - 36,
-                                  map_sprite.topleft[1] + y * map_sprite.grid_size - 40];
-        }
+      switch (state.main) {
+        case state.MainEnum.TITLE:
+          if (user_input.btn_start_game_clicked) {
+            this.init_game();
+          }
+          break;
+
+        case state.MainEnum.GAME:
+          if (user_input.card_stack_clicked) {
+            state.player_cards = state.player_cards.concat(state.player_card_stack.slice(0, 2));
+            state.player_card_stack = state.player_card_stack.slice(2);
+          }
+          if (user_input.board_clicked !== null) {
+            state.reimu_xy = user_input.board_clicked;
+            var x = state.reimu_xy[0];
+            var y = state.reimu_xy[1];
+            if (reimu_sprite && reimu_sprite.img_loaded()) {
+              reimu_sprite.topleft = [map_sprite.topleft[0] + (x + 0.5) * map_sprite.grid_size - 36,
+                                      map_sprite.topleft[1] + y * map_sprite.grid_size - 40];
+            }
+          }
+          break;
       }
       user_input.reset();
     },
@@ -194,7 +254,7 @@ function (LkyEngine, objects) {
     run: function () {
       var self = this;
       var canvas = document.getElementById("myCanvas");
-      var engine = new LkyEngine.Engine(canvas);
+      engine = new LkyEngine.Engine(canvas);
       this.init(engine);
 
       var frame = function () {
