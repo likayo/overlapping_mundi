@@ -100,7 +100,8 @@ function (Sprite) {
        */
       this.render = function () {
         ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        // TODO: draw sprites in descending order of their depth.
+        // draw sprites in descending order of their depth.
+        sprites.sort(function (a, b) { return - (a.depth - b.depth); });
         for (var i = 0; i < sprites.length; i++) {
           sprites[i].render(ctx);
         }
