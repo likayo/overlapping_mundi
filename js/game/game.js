@@ -67,17 +67,19 @@ function (LkyEngine, objects) {
         card_size = [60, 80],
         interval = 20;
 
+    ctx.beginPath();
     ctx.strokeStyle = "red";
     ctx.lineWidth   = 5;
     ctx.font        = this.text_font;
+    ctx.textAlign   = "center";
     for (i in this.state.player_cards) {
       topleft = [this.topleft[0] + i * card_size[0] + i * interval,
                  this.topleft[1]];
+      ctx.beginPath();
       ctx.fillStyle   = "white";
-      ctx.fillRect(topleft[0], topleft[1],
-                   card_size[0], card_size[1]);
-      ctx.strokeRect(topleft[0], topleft[1],
-                     card_size[0], card_size[1]);
+      ctx.rect(topleft[0], topleft[1], card_size[0], card_size[1]);
+      ctx.fill();
+      ctx.stroke();
       ctx.fillStyle   = "black";
       ctx.fillText(this.state.player_cards[i].name,
                   topleft[0] + card_size[0] / 2,
@@ -94,36 +96,39 @@ function (LkyEngine, objects) {
         interval = 3,
         n = 5;
 
+    ctx.beginPath();
     ctx.strokeStyle = "red";
     ctx.lineWidth   = 2;
     ctx.fillStyle   = "white";
     ctx.font        = text_font;
+    ctx.textAlign   = "center";
     for (i = n - 1; i >= 0; i--) {
       topleft = [this.topleft[0] + i * interval,
                  this.topleft[1] + i * interval];
-      ctx.strokeRect(topleft[0], topleft[1],
-                     card_size[0], card_size[1]);
-      ctx.fillRect(topleft[0] + 1,
-                   topleft[1] + 1,
-                   card_size[0] - 2,
-                   card_size[1] - 2);
+      ctx.beginPath();
+      ctx.rect(topleft[0], topleft[1], card_size[0], card_size[1]);
+      ctx.fill();
+      ctx.stroke();
     }
     ctx.fillStyle = "black";
     ctx.fillText("Draw",
-                 this.topleft[0] + card_size[0] / 5,
+                 this.topleft[0] + card_size[0] / 2,
                  this.topleft[1] + card_size[1] / 2);
   };
 
   var render_bn_start_game = function (ctx) {
     // this: btn_start_game_sprite
+    ctx.beginPath();
     ctx.strokeStyle = "red";
     ctx.lineWidth   = 5;
     ctx.font        = this.text_font;
+    ctx.textAlign   = "center";
+
     ctx.fillStyle   = "white";
-    ctx.fillRect(this.topleft[0], this.topleft[1],
-                   this.size[0], this.size[1]);
-    ctx.strokeRect(this.topleft[0], this.topleft[1],
-                   this.size[0], this.size[1]);
+    ctx.rect(this.topleft[0], this.topleft[1], this.size[0], this.size[1]);
+    ctx.fill();
+    ctx.stroke();
+
     ctx.fillStyle   = "black";
     ctx.fillText("Start",
                 this.topleft[0] + this.size[0] / 2,
