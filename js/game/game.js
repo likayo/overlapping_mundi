@@ -54,6 +54,7 @@ function (LkyEngine, objects) {
   var btn_start_game_sprite = null,
       map_sprite = null,
       reimu_sprite = null,
+      marisa_sprite = null,
       card_stack_sprite = null,
       cards_sprite = null;
 
@@ -185,11 +186,21 @@ function (LkyEngine, objects) {
       map_sprite.change_img("img/map.jpg");
       map_sprite.change_handler("load", function (event, img) {
         this.grid_size = Math.ceil(img.naturalWidth / 28);
-        this.change_handler("click", function (event) {
-          // TODO: find an uniform way to get mouse position in different browsers.
-          var x = Math.floor((event.offsetX - this.topleft[0]) / this.grid_size),
-              y = Math.floor((event.offsetY - this.topleft[1]) / this.grid_size);
+        this.change_handler("click", function (event, mouse_xy) {
+          var x = Math.floor((mouse_xy[0] - this.topleft[0]) / this.grid_size),
+              y = Math.floor((mouse_xy[1] - this.topleft[1]) / this.grid_size);
           user_input.board_clicked = [x, y];
+        });
+        this.change_handler("mousemove", function (event, mouse_xy) {
+          if (marisa_sprite) {
+            marisa_sprite.topleft = [mouse_xy[0] - 25, mouse_xy[1] - 25];
+          }
+        });
+        this.change_handler("mouseout", function (event, mouse_xy) {
+          if (marisa_sprite) {
+            marisa_sprite.topleft = [ this.topleft[0] + this.size[0] / 2 - 25,
+                                      this.topleft[1] + this.size[1] / 2 - 25];
+          }
         });
       });
 
@@ -199,6 +210,13 @@ function (LkyEngine, objects) {
                         100,
                         LkyEngine.Sprite.TypeEnum.STATIC_IMG);
       reimu_sprite.change_img("img/reimu.gif");
+
+      marisa_sprite = engine.create_sprite(
+                        [0, 0],
+                        [50, 50],
+                        0,
+                        LkyEngine.Sprite.TypeEnum.STATIC_IMG);
+      marisa_sprite.change_img("img/marisa.gif");
 
       card_stack_sprite = engine.create_sprite(
                               this.consts.layout.card_stack.slice(0, 2),

@@ -15,23 +15,28 @@
       *   xy: the coordinate of the topleft of sprite.
       *   size: 
       *   depth: 0 means the sprite would be shown at the frontest.
+      *   type: type of sprite. cannot be changed
       */
-    function Sprite(engine_, xy, size_, depth_) {
+    function Sprite(engine_, xy, size_, depth_, type_) {
       var self = this;
 
       /*
        *  PRIVATE MEMBERS
        */
       var engine = engine_;
-      var type = Sprite.TypeEnum.EMPTY;
-      var src = null;
-      var img = null;
-      var user_render = null;  // user-defined render function
+      var type = type_;
       var handler = { // definitions are put below
                       onload: null,
                       onclick: null,
-                      onmousedown: null
+                      onmouseover: null
                     };
+      // used for STATIC_IMG
+      var src = null;
+      var img = null;
+      // used for BUTTON
+      var btn_state = Sprite.BtnStateEnum.OFF;
+      // used for USER_CUSTOMIZED
+      var user_render = null;  // user-defined render function
 
       /*
        *  PUBLIC MEMBERS
@@ -43,7 +48,7 @@
       this.user_handler = {
                             onload: null,
                             onclick: null,
-                            onmousedown: null
+                            onmouseover: null
                           };                   
 
       /*
@@ -52,23 +57,6 @@
       this.get_type = function () { return type; };
       this.get_src = function () { return src; };
       this.img_loaded = function () { return img !== null; };
-
-      this.set_type = function (type_) {
-        switch (type_) {
-          case Sprite.TypeEnum.EMPTY:
-            src = img = null;
-            break;
-          case Sprite.TypeEnum.STATIC_IMG:
-            src = img = null;
-            break;
-          case Sprite.TypeEnum.USER_CUSTIOMIZED:
-            user_render = null;
-            break;
-          default:
-            throw new Error("unknwon sprite type");
-        }
-        type = type_;
-      };
 
       this.set_user_render = function (impl) { user_render = impl; };
 
@@ -103,9 +91,13 @@
             }
             break;
           case "click":
+            // Fall through
+          case "mousemove":
+            // Fall through
+          case "mouseout":
             if (handler_) {
-              this.user_handler.onclick = handler_;
-              engine.register_event(this, "click", { callback: handler.onclick });
+              this.user_handler["on" + event_name] = handler_;
+              engine.register_event(this, event_name, { callback: handler["on" + event_name] });
             } else {
               throw new Error("change_handler: unregistering handler is unimplemented yet");
             }
@@ -149,9 +141,21 @@
         }
       };
 
-      handler.onclick = function (event_) {
+      handler.onclick = function (event_, mouse_xy) {
         if (self.user_handler.onclick) {
-          self.user_handler.onclick.call(self, event_);
+          self.user_handler.onclick.call(self, event_, mouse_xy);
+        }
+      };
+
+      handler.onmousemove = function (event_, mouse_xy) {
+        if (self.user_handler.onmousemove) {
+          self.user_handler.onmousemove.call(self, event_, mouse_xy);
+        }
+      };
+
+      handler.onmouseout = function (event_, mouse_xy) {
+        if (self.user_handler.onmouseout) {
+          self.user_handler.onmouseout.call(self, event_, mouse_xy);
         }
       };
 
@@ -161,6 +165,11 @@
                                       STATIC_IMG: 1,
                                       USER_CUSTIOMIZED: 100
                                     });
+    Sprite.BtnStateEnum = Object.freeze({
+                                          OFF: 0,
+                                          ON: 1,
+                                          MOUSEDOWN: 2
+                                        });
     return Sprite;
 
   })();
