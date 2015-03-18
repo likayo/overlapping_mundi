@@ -77,6 +77,15 @@ function (Sprite) {
         }
       };
 
+      var find_sprite = function (sprite, collection) {
+        for (var i = 0; i < collection.length; i++) {
+          if (collection[i].sprite === sprite) {
+            return i;
+          }
+        }
+        return -1;
+      };
+
       this.remove_sprite = function (spr) {
         if (typeof spr === "string") {
           this.remove_sprite(this.get_sprite(spr));
@@ -87,11 +96,13 @@ function (Sprite) {
               break;
             }
           }
-          for (var i = 0; i < clickables.length; i++) {
-            if (spr === clickables[i].sprite) {
-              clickables.splice(i, 1);
-              break;
-            }
+          i = find_sprite(spr, clickables);
+          if (i >= 0) {
+            clickables.splice(i, 1);
+          }
+          i = find_sprite(spr, mouse_objs);
+          if (i >= 0) {
+            mouse_objs.splice(i, 1);
           }
         }
       };
@@ -119,14 +130,6 @@ function (Sprite) {
        *    spec: extra specifications of registration
        */
       this.register_event = function (sprite, event_name, spec) {
-        var find_sprite = function (sprite, collection) {
-          for (var i = 0; i < collection.length; i++) {
-            if (collection[i].sprite === sprite) {
-              return i;
-            }
-          }
-          return -1;
-        };
         switch (event_name) {
           case "load":
             // TODO: if necessary, this will be encapsulated by a separate

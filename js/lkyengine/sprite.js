@@ -1,7 +1,11 @@
 // sprite.js
 
-;define(function () {
+;define(["./sprite_sheet"],
+function (sprite_sheet) {
   "use strict";
+  var SpriteSheet = sprite_sheet.SpriteSheet;
+  sprite_sheet = undefined;
+
   /*
    * Sprite
    * 
@@ -33,6 +37,8 @@
       // used for STATIC_IMG
       var src = null;
       var img = null;
+      // used for sprite sheet;
+      var sheet = null;
       // used for BUTTON
       var btn_state = Sprite.BtnStateEnum.OFF;
       // used for USER_CUSTOMIZED
@@ -49,7 +55,10 @@
                             onload: null,
                             onclick: null,
                             onmouseover: null
-                          };                   
+                          };
+      // used for SPRITE_SHEET
+      this.sheet_obj_id = null;
+      this.sheet_frame_id = null;
 
       /*
        *  PRIVILEGED PUBLIC METHODS
@@ -69,6 +78,21 @@
           case Sprite.TypeEnum.STATIC_IMG:
             src = src_;
             img = null;
+            engine.register_event(this, "load",
+                                  {
+                                    type: "img",
+                                    src: src_,
+                                    callback: handler.onload
+                                  });
+            break;
+          case Sprite.TypeEnum.SPRITE_SHEET:
+            var obj_grid = arguments[1];
+            var frame_direction = (arguments[2] === "vertical"
+                                    ? SpriteSheet.FrameDirectionEnum.VERTICAL
+                                    : SpriteSheet.FrameDirectionEnum.HORIZONTAL);
+            var num_frame = arguments[3];
+            var frame_size = arguments[4];
+            sheet = new SpriteSheet(src_, obj_grid, frame_direction, num_frame, frame_size);
             engine.register_event(this, "load",
                                   {
                                     type: "img",
@@ -120,6 +144,13 @@
                                   this.size[1]);
             }
             break;
+          case Sprite.TypeEnum.SPRITE_SHEET:
+            if (sheet.img_loaded()) {
+              sheet.draw_frame(ctx,
+                                this.sheet_obj_id, this.sheet_frame_id,
+                                this.topleft, this.size);
+            }
+            break;
           case Sprite.TypeEnum.USER_CUSTIOMIZED:
             if (user_render !== null) {
               user_render.call(this, ctx);
@@ -135,7 +166,14 @@
        *  PRIVATE METHODS
        */
       handler.onload = function (event_, img_) {
-        img = img_;
+        switch (type) {
+          case Sprite.TypeEnum.STATIC_IMG:
+            img = img_;
+            break;
+          case Sprite.TypeEnum.SPRITE_SHEET:
+            sheet.img = img_;
+            break;
+        }
         if (self.user_handler.onload) {
           self.user_handler.onload.call(self, event_, img_);
         }
@@ -163,6 +201,7 @@
     Sprite.TypeEnum = Object.freeze({
                                       EMPTY: 0,
                                       STATIC_IMG: 1,
+                                      SPRITE_SHEET: 2,
                                       USER_CUSTIOMIZED: 100
                                     });
     Sprite.BtnStateEnum = Object.freeze({

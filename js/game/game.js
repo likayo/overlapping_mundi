@@ -56,7 +56,8 @@ function (LkyEngine, objects) {
       reimu_sprite = null,
       marisa_sprite = null,
       card_stack_sprite = null,
-      cards_sprite = null;
+      cards_sprite = null,
+      mark_sprite = null;
 
   /*
    *  PRIVATE RENDERING FUNCTION
@@ -237,6 +238,27 @@ function (LkyEngine, objects) {
       cards_sprite.text_font = this.consts.text_font;
       cards_sprite.state = state;
       cards_sprite.set_user_render(render_cards);
+
+      mark_sprite = engine.create_sprite(
+                        [200, 200],
+                        [28, 28],
+                        25,
+                        LkyEngine.Sprite.TypeEnum.SPRITE_SHEET);
+      mark_sprite.change_img("img/sprite_sheet_mark.png",
+                              [1, 1],
+                              "horizontal",
+                              2,
+                              [32, 32]);
+      mark_sprite.change_handler("load", function (event, img) {
+        this.sheet_obj_id = [0, 0];
+        this.sheet_frame_id = 0;
+        this.change_handler("mousemove", function (event, mouse_xy) {
+          this.sheet_frame_id = 1;
+        });
+        this.change_handler("mouseout", function (event, mouse_xy) {
+          this.sheet_frame_id = 0;
+        });
+      });
     },
 
     /*
