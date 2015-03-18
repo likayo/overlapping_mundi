@@ -147,7 +147,8 @@ function (LkyEngine, objects) {
         //                tl_x, tl_y, width, height
         btn_start_game:   [ 300, 200, 100, 100],
         card_stack:       [ 400, 200,  80, 100],
-        map:              [  20,  40, 670, 432]
+        map:              [  20,  40, 670, 432],
+        map_grid_size:    [Math.ceil(670 / 28), Math.floor(432 / 18)]
       }
     },
 
@@ -185,16 +186,17 @@ function (LkyEngine, objects) {
                       LkyEngine.Engine.MaxDepth,
                       LkyEngine.Sprite.TypeEnum.STATIC_IMG);
       map_sprite.change_img("img/map.jpg");
+      map_sprite.grid_size = this.consts.layout.map_grid_size;
       map_sprite.change_handler("load", function (event, img) {
-        this.grid_size = Math.ceil(img.naturalWidth / 28);
+        user_input.board_clicked = [0, 0];
         this.change_handler("click", function (event, mouse_xy) {
-          var x = Math.floor((mouse_xy[0] - this.topleft[0]) / this.grid_size),
-              y = Math.floor((mouse_xy[1] - this.topleft[1]) / this.grid_size);
+          var x = Math.floor((mouse_xy[0] - this.topleft[0]) / this.grid_size[0]),
+              y = Math.floor((mouse_xy[1] - this.topleft[1]) / this.grid_size[1]);
           user_input.board_clicked = [x, y];
         });
         this.change_handler("mousemove", function (event, mouse_xy) {
           if (marisa_sprite) {
-            marisa_sprite.topleft = [mouse_xy[0] - 25, mouse_xy[1] - 25];
+            marisa_sprite.topleft = [mouse_xy[0], mouse_xy[1]];
           }
         });
         this.change_handler("mouseout", function (event, mouse_xy) {
@@ -239,9 +241,10 @@ function (LkyEngine, objects) {
       cards_sprite.state = state;
       cards_sprite.set_user_render(render_cards);
 
+      console.log(this.consts.layout.map_grid_size);
       mark_sprite = engine.create_sprite(
-                        [200, 200],
-                        [28, 28],
+                        this.consts.layout.map.slice(0, 2),
+                        this.consts.layout.map_grid_size,
                         25,
                         LkyEngine.Sprite.TypeEnum.SPRITE_SHEET);
       mark_sprite.change_img("img/sprite_sheet_mark.png",
@@ -259,6 +262,7 @@ function (LkyEngine, objects) {
           this.sheet_frame_id = 0;
         });
       });
+
     },
 
     /*
@@ -283,8 +287,8 @@ function (LkyEngine, objects) {
             var x = state.reimu_xy[0];
             var y = state.reimu_xy[1];
             if (reimu_sprite && reimu_sprite.img_loaded()) {
-              reimu_sprite.topleft = [map_sprite.topleft[0] + (x + 0.5) * map_sprite.grid_size - 36,
-                                      map_sprite.topleft[1] + y * map_sprite.grid_size - 40];
+              reimu_sprite.topleft = [map_sprite.topleft[0] + (x + 0.5) * map_sprite.grid_size[0] - 36,
+                                      map_sprite.topleft[1] + y * map_sprite.grid_size[1] - 40];
             }
           }
           break;
