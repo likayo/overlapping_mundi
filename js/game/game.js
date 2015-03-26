@@ -4,8 +4,8 @@
  *
  */
 
-define(["lkyengine", "./objects"],
-function (LkyEngine, objects) {
+define(["lkyengine", "./objects", "./ui", "./data"],
+function (LkyEngine, objects, ui, data) {
   "use strict";
   var Card = objects.Card;
 
@@ -42,11 +42,13 @@ function (LkyEngine, objects) {
 
   // Summarize user inputs in a frame
   var user_input = {
+    // these properties must be the same object at any moment
+    ui_field: {},
     // Will be called at the start of each frame
     reset: function () {
       this.new_game_clicked   = null;
-      this.board_clicked      = null;
       this.card_stack_clicked = false;
+      this.ui_field.grid_clicked  = null;
     }
   };
 
@@ -57,7 +59,11 @@ function (LkyEngine, objects) {
       marisa_sprite = null,
       card_stack_sprite = null,
       cards_sprite = null,
-      mark_sprite = null;
+      mark_sprites = null;
+
+  var ui_field = null;
+
+  var reimu = null;
 
   /*
    *  PRIVATE RENDERING FUNCTION
@@ -143,12 +149,12 @@ function (LkyEngine, objects) {
     consts: {
       text_font: "12pt 微软雅黑",
       layout: {
-        canvas: [700, 500],
+        canvas: [800, 750],
         //                tl_x, tl_y, width, height
         btn_start_game:   [ 300, 200, 100, 100],
         card_stack:       [ 400, 200,  80, 100],
-        map:              [  20,  40, 670, 432],
-        map_grid_size:    [Math.ceil(670 / 28), Math.floor(432 / 18)]
+        map:              [  20,  20, 700, 700],
+        map_grid_size:    [Math.ceil(671 / 11), Math.floor(671 / 11)]
       }
     },
 
@@ -174,52 +180,14 @@ function (LkyEngine, objects) {
     },
 
     init_game: function () {
+      var i, j, spr;
+
       state.reset(state.MainEnum.GAME);
       user_input.reset();
 
       if (btn_start_game_sprite) {
         engine.remove_sprite(btn_start_game_sprite);
       }
-      map_sprite = engine.create_sprite(
-                      this.consts.layout.map.slice(0, 2),
-                      this.consts.layout.map.slice(2, 4),
-                      LkyEngine.Engine.MaxDepth,
-                      LkyEngine.Sprite.TypeEnum.STATIC_IMG);
-      map_sprite.change_img("img/map.jpg");
-      map_sprite.grid_size = this.consts.layout.map_grid_size;
-      map_sprite.change_handler("load", function (event, img) {
-        user_input.board_clicked = [0, 0];
-        this.change_handler("click", function (event, mouse_xy) {
-          var x = Math.floor((mouse_xy[0] - this.topleft[0]) / this.grid_size[0]),
-              y = Math.floor((mouse_xy[1] - this.topleft[1]) / this.grid_size[1]);
-          user_input.board_clicked = [x, y];
-        });
-        this.change_handler("mousemove", function (event, mouse_xy) {
-          if (marisa_sprite) {
-            marisa_sprite.topleft = [mouse_xy[0], mouse_xy[1]];
-          }
-        });
-        this.change_handler("mouseout", function (event, mouse_xy) {
-          if (marisa_sprite) {
-            marisa_sprite.topleft = [ this.topleft[0] + this.size[0] / 2 - 25,
-                                      this.topleft[1] + this.size[1] / 2 - 25];
-          }
-        });
-      });
-
-      reimu_sprite = engine.create_sprite(
-                        [0, 0],
-                        [64, 64],
-                        100,
-                        LkyEngine.Sprite.TypeEnum.STATIC_IMG);
-      reimu_sprite.change_img("img/reimu.gif");
-
-      marisa_sprite = engine.create_sprite(
-                        [0, 0],
-                        [50, 50],
-                        0,
-                        LkyEngine.Sprite.TypeEnum.STATIC_IMG);
-      marisa_sprite.change_img("img/marisa.gif");
 
       card_stack_sprite = engine.create_sprite(
                               this.consts.layout.card_stack.slice(0, 2),
@@ -241,28 +209,12 @@ function (LkyEngine, objects) {
       cards_sprite.state = state;
       cards_sprite.set_user_render(render_cards);
 
-      console.log(this.consts.layout.map_grid_size);
-      mark_sprite = engine.create_sprite(
-                        this.consts.layout.map.slice(0, 2),
-                        this.consts.layout.map_grid_size,
-                        25,
-                        LkyEngine.Sprite.TypeEnum.SPRITE_SHEET);
-      mark_sprite.change_img("img/sprite_sheet_mark.png",
-                              [1, 1],
-                              "horizontal",
-                              2,
-                              [32, 32]);
-      mark_sprite.change_handler("load", function (event, img) {
-        this.sheet_obj_id = [0, 0];
-        this.sheet_frame_id = 0;
-        this.change_handler("mousemove", function (event, mouse_xy) {
-          this.sheet_frame_id = 1;
-        });
-        this.change_handler("mouseout", function (event, mouse_xy) {
-          this.sheet_frame_id = 0;
-        });
-      });
-
+      ui_field = new ui.BattleField(engine, this.consts, user_input.ui_field);
+      ui_field.init();
+      reimu = new objects.Character(data.characters[0]);
+      reimu.init([2, 2]);
+      ui_field.add_character(reimu);
+      ui_field.show_possible_moves(reimu);
     },
 
     /*
@@ -282,18 +234,16 @@ function (LkyEngine, objects) {
             state.player_cards = state.player_cards.concat(state.player_card_stack.slice(0, 2));
             state.player_card_stack = state.player_card_stack.slice(2);
           }
-          if (user_input.board_clicked !== null) {
-            state.reimu_xy = user_input.board_clicked;
-            var x = state.reimu_xy[0];
-            var y = state.reimu_xy[1];
-            if (reimu_sprite && reimu_sprite.img_loaded()) {
-              reimu_sprite.topleft = [map_sprite.topleft[0] + (x + 0.5) * map_sprite.grid_size[0] - 36,
-                                      map_sprite.topleft[1] + y * map_sprite.grid_size[1] - 40];
-            }
+          if (user_input.ui_field.grid_clicked) {
+            reimu.pos = user_input.ui_field.grid_clicked;
+            ui_field.show_possible_moves(reimu);
           }
           break;
       }
       user_input.reset();
+      if (ui_field) {
+        ui_field.update();
+      }
     },
 
     /*
