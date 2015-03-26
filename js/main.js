@@ -9,6 +9,10 @@ requirejs.config({
               {
                 name: "game",
                 main: "game"
+              },
+              {
+                name: "data",
+                main: "data"
               }
             ]
 });
