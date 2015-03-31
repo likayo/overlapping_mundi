@@ -18,9 +18,10 @@ function (LkyEngine) {
       var engine = engine_;
       var consts = consts_;
       var input_collector = input_collector_;
+      var characters = null;
+      // sprites
       var spr_board = null;
       var sprs_mark = null;
-      var characters = null;
       var sprs_character = null;
 
       this.init = function () {
@@ -61,8 +62,9 @@ function (LkyEngine) {
                 this.sheet_frame_id = 0;
               });
               this.change_handler("click", function (event, mouse_xy) {
-                input_collector.grid_clicked = this.index;
-                // console.log(this.index);
+                if (!this.invisible) {  // disable the button when invisible
+                  input_collector.grid_clicked = this.index;
+                }
               })
             });
             spr.invisible = true;
@@ -102,7 +104,7 @@ function (LkyEngine) {
       this.show_possible_moves = function (ch) {
         var idx = characters.indexOf(ch);
         if (idx < 0) {
-          throw new Error("show_possible_moves: character not found");
+          throw new Error("BattleField.show_possible_moves: character not found");
         }
         for (var i = 0; i < 11; i++) {
           for (var j = 0; j < 11; j++) {

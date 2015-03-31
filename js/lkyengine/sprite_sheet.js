@@ -4,6 +4,7 @@
   "use strict";
   /*
    * SpriteSheet
+   * TODO: create a more expressive interface
    */
   var SpriteSheet = (function () {
 

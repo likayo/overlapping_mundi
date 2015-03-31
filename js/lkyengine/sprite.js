@@ -12,7 +12,7 @@ function (sprite_sheet) {
    */
   var Sprite = (function () {
      /*
-      * Sprite(engine, xy, size, depth): 
+      * Sprite (engine, xy, size, depth): 
       * Create an empty sprite.
       * Args:
       *   engine: the engine that this sprite is binded to.
@@ -21,7 +21,7 @@ function (sprite_sheet) {
       *   depth: 0 means the sprite would be shown at the frontest.
       *   type: type of sprite. cannot be changed
       */
-    function Sprite(engine_, xy, size_, depth_, type_) {
+    function Sprite (engine_, xy, size_, depth_, type_) {
       var self = this;
 
       /*

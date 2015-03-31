@@ -213,7 +213,6 @@ function (LkyEngine, logic, ui, data) {
       ui_field.init();
 
       core = new logic.Core();
-      core.init();
 
       var reimu = new logic.Character(data.characters[0]);
       reimu.init([2, 2]);
