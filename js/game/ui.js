@@ -87,7 +87,11 @@ function (LkyEngine) {
                     [64, 64],
                     2,
                     LkyEngine.Sprite.TypeEnum.STATIC_IMG);
-        spr.change_img("img/reimu.gif");
+        if (ch.id === 1) {
+          spr.change_img("img/reimu.gif");
+        } else {
+          spr.change_img("img/marisa.gif");
+        }
         sprs_character.push(spr);
       };
 

@@ -6,5 +6,13 @@
         "max_hp": 6600,
         "mov": 2,
         "inherent_skills": ["二重结界", "自由飞翔的能力"]
+    },
+    {
+    	"id": 2,
+        "name": "雾雨魔理沙",
+        "init_hp": 4800,
+        "max_hp": 6600,
+        "mov": 2,
+        "inherent_skills": ["二重结界", "自由飞翔的能力"]	
     }
 ]

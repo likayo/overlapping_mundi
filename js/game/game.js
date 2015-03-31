@@ -4,17 +4,17 @@
  *
  */
 
-define(["lkyengine", "./objects", "./ui", "./data"],
-function (LkyEngine, objects, ui, data) {
+define(["lkyengine", "./logic", "./ui", "./data"],
+function (LkyEngine, logic, ui, data) {
   "use strict";
-  var Card = objects.Card;
+  var Card = logic.Card;
 
   /*
    *  PRIVATE MEMBERS
    */
   var engine = null;
 
-  // Game state
+  // UI state
   var state = {
     MainEnum: Object.freeze({
                               TITLE: 0,
@@ -29,7 +29,6 @@ function (LkyEngine, objects, ui, data) {
           break;
         case this.MainEnum.GAME:
           this.main               = this.MainEnum.GAME;
-          this.reimu_xy           = [0, 0];
           this.player_cards       = [];
           this.player_card_stack  = [new Card("A"), new Card("B"), new Card("C"),
                                      new Card("AA"), new Card("BB"), new Card("CC")];
@@ -61,9 +60,10 @@ function (LkyEngine, objects, ui, data) {
       cards_sprite = null,
       mark_sprites = null;
 
+  // UI elements
   var ui_field = null;
 
-  var reimu = null;
+  var core = null;
 
   /*
    *  PRIVATE RENDERING FUNCTION
@@ -211,10 +211,22 @@ function (LkyEngine, objects, ui, data) {
 
       ui_field = new ui.BattleField(engine, this.consts, user_input.ui_field);
       ui_field.init();
-      reimu = new objects.Character(data.characters[0]);
+
+      core = new logic.Core();
+      core.init();
+
+      var reimu = new logic.Character(data.characters[0]);
       reimu.init([2, 2]);
+      core.add_player(reimu, []);
+      var marisa = new logic.Character(data.characters[1]);
+      marisa.init([5, 5]);
+      core.add_player(marisa, []);
+
       ui_field.add_character(reimu);
+      ui_field.add_character(marisa);
       ui_field.show_possible_moves(reimu);
+
+      core.start_game(1);
     },
 
     /*
@@ -235,8 +247,12 @@ function (LkyEngine, objects, ui, data) {
             state.player_card_stack = state.player_card_stack.slice(2);
           }
           if (user_input.ui_field.grid_clicked) {
-            reimu.pos = user_input.ui_field.grid_clicked;
-            ui_field.show_possible_moves(reimu);
+            var ch = core.get_current_player().main_character;
+            ch.pos = user_input.ui_field.grid_clicked;
+            
+            core.to_next_player();
+            ch = core.get_current_player().main_character;
+            ui_field.show_possible_moves(ch);
           }
           break;
       }
