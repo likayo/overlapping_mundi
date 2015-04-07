@@ -1,0 +1,31 @@
+[
+    {
+        "id": 1000,
+        "name": "扫帚",
+        "main_type": "melee_attack",
+        "sub_type": "钝击",
+        "atk": 200,
+        "range": [1, 1],
+        "mov_offset": 0,
+        "instruction": "命中确认后对方向受到攻击的方向后退两格",
+        "illustrator": "头戴内裤银silver"
+    },
+    {
+        "id": 1001,
+        "name": "升龙",
+        "main_type": "melee_attack",
+        "sub_type": "钝击",
+        "atk": 400,
+        "range": [1, 1],
+        "mov_offset": 0,
+        "instruction": "这张卡不受反击卡影响",
+        "illustrator": "真空"
+    },
+    {
+        "id": 5000,
+        "name": "迎击",
+        "main_type": "counter",
+        "instruction": "丢弃手中一张手卡，使得对方给你的一次对战卡攻击无效",
+        "illustrator": "箱入猫姬"
+    }
+]
