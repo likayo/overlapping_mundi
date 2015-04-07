@@ -4,16 +4,33 @@
  *
  */
 
-define(["lkyengine", "./logic", "./ui", "./data"],
-function (LkyEngine, logic, ui, data) {
+;define(["lkyengine", "./logic", "./ui", "./data", "./utils"],
+function (LkyEngine, logic, ui, data, utils) {
   "use strict";
   var Card = logic.Card;
+  var create_2d_array = utils.create_2d_array;
+  utils = undefined;
 
   /*
    *  PRIVATE MEMBERS
    */
   var engine = null;
-
+  // Sprites
+  var btn_start_game_sprite = null,
+      map_sprite = null,
+      reimu_sprite = null,
+      marisa_sprite = null,
+      card_stack_sprite = null,
+      cards_sprite = null,
+      mark_sprites = null;
+  // UI elements
+  var ui_field = null;
+  // Core logic
+  var core = null;
+  // Watchers of user input
+  var watchers = null;
+  // Commands from core logic that is pending
+  var pending_cmds = null;
   // UI state
   var state = {
     MainEnum: Object.freeze({
@@ -38,32 +55,14 @@ function (LkyEngine, logic, ui, data) {
       }
     }
   };
-
   // Summarize user inputs in a frame
   var user_input = {
-    // these properties must be the same object at any moment
-    ui_field: {},
     // Will be called at the start of each frame
     reset: function () {
       this.new_game_clicked   = null;
       this.card_stack_clicked = false;
-      this.ui_field.grid_clicked  = null;
     }
   };
-
-  // Sprites
-  var btn_start_game_sprite = null,
-      map_sprite = null,
-      reimu_sprite = null,
-      marisa_sprite = null,
-      card_stack_sprite = null,
-      cards_sprite = null,
-      mark_sprites = null;
-
-  // UI elements
-  var ui_field = null;
-
-  var core = null;
 
   /*
    *  PRIVATE RENDERING FUNCTION
@@ -143,11 +142,114 @@ function (LkyEngine, logic, ui, data) {
                 this.topleft[1] + this.size[1] / 2);
   };
 
+  var handle_ask_init_position = function (cmd) {
+    // this: Game object
+    var i, j, mat;
+    var watcher;
+    var player_id = cmd[1];
+
+    var watcher_callback = function (game_state, logic_core) {
+      // this: Watcher object
+      if (this.collector.grid_clicked) {
+        logic_core.report_init_position(this.player_id, this.collector.grid_clicked);
+        this.ui_element.add_character(logic_core.get_player(this.player_id).main_character);
+        this.ui_element.disable_pos_selection();
+        return true;  // finish this watcher
+      }
+      return false;
+    };
+
+    if (ui_field.pos_selection_enabled) {   // UI elements occupied
+      return false;
+    }
+    mat = create_2d_array(this.consts.battle_field_size, false);
+    for (i = 0; i < 6; i++) {
+      for (j = 0; j < 6; j++) {
+        mat[(i < 3? i: i + 5)][(j < 3? j: j + 5)] = true;
+      }
+    }
+    ui_field.enable_pos_selection(mat);
+    watcher = ui_field.create_watcher(watcher_callback);
+    watcher.player_id = player_id;
+    watchers.push(watcher);
+    return true;
+  };  // End handle_ask_init_position()
+
+  var handle_ask_movement = function (cmd) {
+    // this: Game object
+    var i, j,
+        ch,
+        player_id = cmd[1],
+        watcher;
+
+    var dfs = function dfs (mat, pos, steps) {
+      var i = pos[0], j = pos[1];
+      var nrow = mat.length, ncolumn = mat[0].length;
+      if (steps !== 0) {
+        if (mat[i][j] !== null) {
+          return;
+        } else if (dfs.result[i][j] <= steps) { // have been visited
+          return;
+        }
+      }
+      dfs.result[i][j] = steps;
+      if (i - 1 >= 0) {
+        dfs(mat, [i - 1, j], steps + 1);
+      }
+      if (i + 1 < nrow) {
+        dfs(mat, [i + 1, j], steps + 1);
+      }
+      if (j - 1 >= 0) {
+        dfs(mat, [i, j - 1], steps + 1);
+      }
+      if (j + 1 < ncolumn) {
+        dfs(mat, [i, j + 1], steps + 1);
+      }
+    };
+
+    var watcher_callback = function (game_state, logic_core) {
+      // this: Watcher object
+      if (this.collector.grid_clicked) {
+        logic_core.report_movement(this.player_id, this.collector.grid_clicked);
+        this.ui_element.disable_pos_selection();
+        return true;  // finish this watcher
+      } else if (this.collector.canceled) {
+        // TODO: cancel button
+        this.ui_element.disable_pos_selection();
+      }
+      return false;
+    };
+
+    if (ui_field.pos_selection_enabled) {   // UI elements occupied
+      return false;
+    }
+    // Search available movements
+    ch = core.get_player(player_id).main_character;
+    console.log(core.get_board_matrix());
+    dfs.result = create_2d_array(this.consts.battle_field_size, Number.POSITIVE_INFINITY);
+    dfs(core.get_board_matrix(), ch.pos, 0);
+    for (i = 0; i < this.consts.battle_field_size[0]; i++) {
+      for (j = 0; j < this.consts.battle_field_size[1]; j++) {
+        if (1 <= dfs.result[i][j] && dfs.result[i][j] <= ch.mov) {
+          dfs.result[i][j] = true;
+        } else {
+          dfs.result[i][j] = false;
+        }
+      }
+    }
+    ui_field.enable_pos_selection(dfs.result, ui.BattleField.Cancelable);
+    watcher = ui_field.create_watcher(watcher_callback);
+    watcher.player_id = player_id;
+    watchers.push(watcher);
+    return true;
+  };  // End handle_ask_movement()
+
   var Game = {
 
     // Graphic constants
     consts: {
       text_font: "12pt 微软雅黑",
+      battle_field_size: logic.Core.BoardSize,
       layout: {
         canvas: [800, 750],
         //                tl_x, tl_y, width, height
@@ -166,6 +268,8 @@ function (LkyEngine, logic, ui, data) {
       state.reset(state.MainEnum.TITLE);
       user_input.reset();
       engine.init(this.consts.layout.canvas);
+      watchers = [];
+      pending_cmds = [];
 
       btn_start_game_sprite = engine.create_sprite(
                                 this.consts.layout.btn_start_game.slice(0, 2),
@@ -213,19 +317,12 @@ function (LkyEngine, logic, ui, data) {
       ui_field.init();
 
       core = new logic.Core();
+      core.init();
 
       var reimu = new logic.Character(data.characters[0]);
-      reimu.init([2, 2]);
-      core.add_player(reimu, []);
+      core.report_new_player(reimu, []);
       var marisa = new logic.Character(data.characters[1]);
-      marisa.init([5, 5]);
-      core.add_player(marisa, []);
-
-      ui_field.add_character(reimu);
-      ui_field.add_character(marisa);
-      ui_field.show_possible_moves(reimu);
-
-      core.start_game(1);
+      core.report_new_player(marisa, []);
     },
 
     /*
@@ -233,6 +330,9 @@ function (LkyEngine, logic, ui, data) {
      * Update the game state based on the user input.
      */
     update: function () {
+      var i, cmd;
+      var self = this;
+
       switch (state.main) {
         case state.MainEnum.TITLE:
           if (user_input.btn_start_game_clicked) {
@@ -245,24 +345,49 @@ function (LkyEngine, logic, ui, data) {
             state.player_cards = state.player_cards.concat(state.player_card_stack.slice(0, 2));
             state.player_card_stack = state.player_card_stack.slice(2);
           }
-          if (user_input.ui_field.grid_clicked) {
-            var ch = core.get_current_player().main_character;
-            ch.pos = user_input.ui_field.grid_clicked;
-            
-            core.to_next_player();
-            ch = core.get_current_player().main_character;
-            ui_field.show_possible_moves(ch);
-          }
           break;
+      }
+      for (i = 0; i < watchers.length; i++) {
+        var finish = watchers[i].watch(state, core);
+        if (finish) {
+          watchers.splice(i, 1);
+          i--;
+        }
       }
       user_input.reset();
       if (ui_field) {
         ui_field.update();
       }
+
+      if (core) {
+        cmd = core.pull_cmd();
+        if (cmd) {
+          pending_cmds.push(cmd);
+        }
+      }
+      for (i = 0; i < pending_cmds.length; i++) {
+        var success = this.handle_cmd(pending_cmds[i]);
+        if (success) {
+          pending_cmds.splice(i, 1);
+          i--;
+        }
+      }
+    },
+
+    // return true if the command is handled successfully
+    handle_cmd: function (cmd) {
+      switch (cmd[0]) {
+        case "ask_init_position":
+          return handle_ask_init_position.call(this, cmd);
+        case "ask_movement":
+          return handle_ask_movement.call(this, cmd);
+        default:
+          throw new Error("handle_cmd: unknwon cmd type");
+      }
     },
 
     /*
-     * run
+     * Game.run()
      * The main loop of the game
      */
     run: function () {

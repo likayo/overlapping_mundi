@@ -10,9 +10,9 @@
     {
     	"id": 2,
         "name": "雾雨魔理沙",
-        "init_hp": 4800,
-        "max_hp": 6600,
-        "mov": 2,
-        "inherent_skills": ["二重结界", "自由飞翔的能力"]	
+        "init_hp": 4200,
+        "max_hp": 6000,
+        "mov": 3,
+        "inherent_skills": ["魔理沙偷走了重要的东西", "魔炮"]	
     }
 ]

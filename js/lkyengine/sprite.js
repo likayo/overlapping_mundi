@@ -86,6 +86,9 @@ function (sprite_sheet) {
                                   });
             break;
           case Sprite.TypeEnum.SPRITE_SHEET:
+            if (arguments.length !== 5) {
+              throw new Error("Sprite.change_img: arguments nubmer too few")
+            }
             var obj_grid = arguments[1];
             var frame_direction = (arguments[2] === "vertical"
                                     ? SpriteSheet.FrameDirectionEnum.VERTICAL
@@ -101,7 +104,7 @@ function (sprite_sheet) {
                                   });
             break;
           default:
-            throw new Error("change_img: illegal sprite type");
+            throw new Error("Sprite.change_img: illegal sprite type");
         }
       };
 
