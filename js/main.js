@@ -21,7 +21,8 @@ require(["game"], function(game) {
   game.Game.run();
 });
 
-document.getElementById("changelog").innerHTML =  "<p>2015/03/31 ver 0.009</p>" +
+document.getElementById("changelog").innerHTML =  "<p>2015/04/07 ver 0.010</p>" +
+                                                  "<p>2015/03/31 ver 0.009</p>" +
                                                   "<p>2015/03/18 ver 0.008</p>" +
                                                   "<p>2015/03/17 ver 0.007</p>" +
                                                   "<p>2015/03/07 ver 0.005</p>" +
