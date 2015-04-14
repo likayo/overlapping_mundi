@@ -22,10 +22,40 @@
         "illustrator": "真空"
     },
     {
-        "id": 5000,
+        "id": 1002,
+        "name": "吸血",
+        "main_type": "melee_attack",
+        "sub_type": "特殊",
+        "atk": 400,
+        "range": [1, 1],
+        "mov_offset": 0,
+        "instruction": "命中后自身回复hp400点（不受吸血本身攻击力影响）",
+        "illustrator": "蓝-Hallelujah"
+    },
+
+    {
+        "id": 4000,
+        "name": "神迹",
+        "main_type": "magic",
+        "instruction": "下个自己回合开始，自身hp+800",
+        "illustrator": "dhiea"
+    },
+
+    {
+        "id": 6000,
         "name": "迎击",
         "main_type": "counter",
         "instruction": "丢弃手中一张手卡，使得对方给你的一次对战卡攻击无效",
         "illustrator": "箱入猫姬"
+    },
+
+    {
+        "id": 10000,
+        "name": "火力全开",
+        "main_type": "spell_card",
+        "character_name": "雾雨魔理沙",
+        "cost": 3,
+        "instruction": "从本回合开始到第2个自己回合结束，远战卡攻击力上升100，同时最大范围+1",
+        "illustrator": "零花"
     }
 ]

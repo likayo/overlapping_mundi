@@ -14,5 +14,13 @@
         "max_hp": 6000,
         "mov": 3,
         "inherent_skills": ["魔理沙偷走了重要的东西", "魔炮"]	
+    },
+    {
+        "id": 3,
+        "name": "魂魄妖梦",
+        "init_hp": 4300,
+        "max_hp": 6000,
+        "mov": 3,
+        "inherent_skills": ["魂魄", "用剑达人"]
     }
 ]
