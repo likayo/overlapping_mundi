@@ -1,7 +1,6 @@
 /*
- * Game: 
- *
- *
+ * game.js
+ * Game main loop.
  */
 
 ;define(["lkyengine", "./logic", "./ui", "./data", "./utils"],
@@ -142,6 +141,9 @@ function (LkyEngine, logic, ui, data, utils) {
                 this.topleft[1] + this.size[1] / 2);
   };
 
+  /*
+   *  PRIVATE HANDLER FUNCTION
+   */
   var handle_ask_init_position = function (cmd) {
     // this: Game object
     var i, j, mat;
@@ -225,7 +227,6 @@ function (LkyEngine, logic, ui, data, utils) {
     }
     // Search available movements
     ch = core.get_player(player_id).main_character;
-    console.log(core.get_board_matrix());
     dfs.result = create_2d_array(this.consts.battle_field_size, Number.POSITIVE_INFINITY);
     dfs(core.get_board_matrix(), ch.pos, 0);
     for (i = 0; i < this.consts.battle_field_size[0]; i++) {
@@ -261,7 +262,7 @@ function (LkyEngine, logic, ui, data, utils) {
     },
 
     /*
-     * init
+     * Game.init()
      * Reset the state of game, and initialize the engine and sprites.
      */
     init: function () {
@@ -283,6 +284,11 @@ function (LkyEngine, logic, ui, data, utils) {
       });
     },
 
+    /*
+     * Game.init_game()
+     * Set the main state to GAME, and initialize necessary sprites, UI elements
+     * and core logic.
+     */
     init_game: function () {
       var i, j, spr;
 
@@ -326,7 +332,7 @@ function (LkyEngine, logic, ui, data, utils) {
     },
 
     /*
-     * update
+     * Game.update()
      * Update the game state based on the user input.
      */
     update: function () {

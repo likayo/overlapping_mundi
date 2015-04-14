@@ -1,4 +1,7 @@
-// data.js
+/*
+ * data.js
+ * Read static JSON data.
+ */
 
 ;define(["text!data/characters.json", "text!data/cards.json"],
 function (data_characters, data_cards) {

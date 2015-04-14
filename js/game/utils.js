@@ -1,4 +1,8 @@
-// utils.js
+/*
+ * utils.js
+ * Misc. utility functions
+ */
+
 ;define(function () {
   "use strict";
 
