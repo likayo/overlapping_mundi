@@ -33,14 +33,12 @@ function (utils) {
     this.inherent_skills = const_data.inherent_skills;
 
     // VOLATILE PUBLIC MEMBERS
-    this.player = null;   // binded to the owner. Changed in Player()
     this.pos = null;
     this.hp = null;
     this.sp = null;
 
     // initialize character status
     this.init = function (pos) {
-      this.player = null;
       this.pos = pos;
       this.hp = this.init_hp;
       this.sp = 0;
@@ -60,80 +58,203 @@ function (utils) {
     this.id = id;
     this.main_character = main_character;
     this.cards = cards;
-
-    this.main_character.player = this;  // bind the character
   };
 
+  var Core = {};
+  Core.MainStateEnum = Object.freeze({
+                                        INIT: 0,
+                                        GAME: 1,
+                                      });
+  Core.BoardSize = [/* row: */ 11, /* column: */ 11];
 
-  /*
-   * Core
-   * The core of game logic.
-   */
-  var Core = function Core () {
-    var state = null;
-    var pending_cmds = null;
+  var EmulatedServer = function EmulatedServer () {
+    var send_queue = [];
+    var game_state = {
+                        main: Core.MainStateEnum.INIT,
+                        players: [],
+                        player_is_init: [],
+                        turn_id: null,
+                        first_player_id: null,
+                        current_player_id: null
+                      };
 
-    this.init = function () {
-      state = {
-                main: Core.MainStateEnum.INIT,
-                players: [],
-                player_is_init: [],
-                turn_id: null,
-                first_player_id: null,
-                current_player_id: null
-              };
-      pending_cmds = [];
+    this.push_send_queue = function (type, content) {
+      send_queue.push(JSON.stringify([type, content]));
+    };
+    
+    // TODO: remove this method
+    this.get_game_state = function () {
+      return game_state;
     };
 
-    // add a new player in the init state
-    this.report_new_player = function (character, cards) {
-      if (state.main !== Core.MainStateEnum.INIT) {
-        throw new Error("Core.report_new_player: not allowed.");
-      }
-      var player = new Player(state.players.length + 1, character, cards);
-      var player_id = state.players.length + 1;
-      state.players.push(player);
-      state.player_is_init.push(false);
-      pending_cmds.push(["ask_init_position", player_id]);
-    };
-
-    this.report_init_position = function (player_id, pos) {
-      var is_true = function (x) {
-        return !!x;
-      };
-      this.get_player(player_id).main_character.init(pos);
-      state.player_is_init[player_id - 1] = true;
-      if (state.player_is_init.every(is_true)) {
-        this.start_game(1);
+    this.receive = function (json_request) {
+      var request = JSON.parse(json_request);
+      var cb = this["handle_" + request[0]];
+      if (cb !== undefined) {
+        cb.call(this, request[1]);
       }
     };
 
-    // finish init and start the game
-    this.start_game = function (first_player_id) {
-      state.main = Core.MainStateEnum.GAME;
-      state.turn_id = 1;
-      state.first_player_id = first_player_id;
-      state.current_player_id = first_player_id;
-
-      pending_cmds.push(["ask_movement", state.current_player_id]);
+    this.send_cmd = function (send) {
+      return (send_queue.length > 0
+              ? send_queue.splice(0, 1)[0]
+              : null);
     };
 
     // get the total number of players
     this.get_num_players = function () {
-      return state.players.length;
+      return game_state.players.length;
     };
 
     // get a specific player
     this.get_player = function (player_id) {
-      return state.players[player_id - 1];
+      return game_state.players[player_id - 1];
     };
 
     // get the current player
     this.get_current_player = function () {
-      return this.get_player(state.current_player_id);
+      return this.get_player(game_state.current_player_id);
     };
 
-    this.get_board_matrix = function () {
+    // finish init and start the game
+    this.start_game = function (first_player_id) {
+      game_state.main = Core.MainStateEnum.GAME;
+      game_state.turn_id = 1;
+      game_state.first_player_id = first_player_id;
+      game_state.current_player_id = first_player_id;
+
+      this.push_send_queue( "ask_movement",
+                            { player_id: game_state.current_player_id });
+    };
+
+    // COMMAND report_new_player: add a new player in the init state
+    this.handle_report_new_player = function (content) {
+      if (game_state.main !== Core.MainStateEnum.INIT) {
+        throw new Error("CoreClient.report_new_player: not allowed.");
+      }
+      var player = new Player(game_state.players.length + 1, content.character, content.cards);
+      var player_id = game_state.players.length + 1;
+      game_state.players.push(player);
+      game_state.player_is_init.push(false);
+      this.push_send_queue("tell_player_id", { player_id: player_id });
+      this.push_send_queue("ask_init_position", { player_id: player_id });
+    };
+
+    // COMMAND report_init_position: report the init position of a player
+    this.handle_report_init_position = function (content) {
+      var is_true = function (x) {
+        return !!x;
+      };
+      this.get_player(content.player_id).main_character.init(content.pos);
+      game_state.player_is_init[content.player_id - 1] = true;
+      if (game_state.player_is_init.every(is_true)) {
+        this.start_game(1);
+      }
+    };
+    
+    // COMMAND report_movement: report the movement of a player's main character
+    this.handle_report_movement = function (content) {
+      this.get_player(content.player_id).main_character.pos = content.pos;
+      this.to_next_player();
+    };
+
+    // hand over the control to the next player.
+    this.to_next_player = function () {
+      game_state.current_player_id += 1;
+      if (game_state.current_player_id > this.get_num_players()) {
+        game_state.current_player_id = 1;
+      }
+      if (game_state.current_player_id === game_state.first_player_id) {
+        game_state.turn_id += 1;
+      }
+
+      this.push_send_queue( "ask_movement",
+                            { player_id: game_state.current_player_id });
+    };
+  };
+
+  /*
+   * CoreClient
+   * The core of game logic.
+   */
+  var CoreClient = function CoreClient () {
+    var client_state = null;
+    var pending_cmds = null;
+    var server = null;
+
+    this.init = function () {
+      var self = this;
+      client_state = {
+                        player_id: null
+                      };
+      pending_cmds = [];
+      server = new EmulatedServer();
+      window.setInterval( function () { 
+                            return self.receive_cmd();
+                          }, 200);
+    };
+
+    this.send_request = function (type, content) {
+      server.receive(JSON.stringify([type, content]));
+    };
+
+    this.receive_cmd = function () {
+      while (true) {
+        var json_cmd = server.send_cmd();
+        if (!!json_cmd) {  // if receive a cmd
+          var cmd = JSON.parse(json_cmd);
+          if (cmd[0].startsWith("tell_")) {
+            if (cmd[0] === "tell_player_id") {
+              client_state.player_id = cmd[1].player_id;
+            }
+          } else {
+            pending_cmds.push(cmd);
+          }
+        } else {
+          break;
+        }
+      }
+    };
+    
+    this.get_game_state = function () {
+      // FIXME: add cache mechanism for real servers.
+      return server.get_game_state();
+    };
+
+    // COMMAND report_new_player: add a new player in the init state
+    this.report_new_player = function (character, cards) {
+      this.send_request("report_new_player",
+                        { character: character, cards: cards });
+    };
+
+    // COMMAND report_init_position: report the init position of a player
+    this.report_init_position = function (player_id, pos) {
+      this.send_request("report_init_position",
+                        { player_id: player_id, pos: pos });
+    };
+
+    // COMMAND report_movement: report the movement of a player's main character
+    this.report_movement = function (player_id, pos) {
+      this.send_request("report_movement",
+                        { player_id: player_id, pos: pos });
+    };
+
+    // get the total number of players
+    this.get_num_players = function () {
+      return this.get_game_state().players.length;
+    };
+
+    // get a specific player
+    this.get_player = function (player_id) {
+      return this.get_game_state().players[player_id - 1];
+    };
+
+    // get the current player
+    this.get_current_player = function () {
+      return this.get_player(this.get_game_state().current_player_id);
+    };
+
+    this.generate_board_matrix = function () {
       var ch;
       var mat = create_2d_array(Core.BoardSize, null);
       for (var k = 1; k <= this.get_num_players(); k++) {
@@ -143,41 +264,19 @@ function (utils) {
       return mat;
     };
 
-    this.report_movement = function (player_id, pos) {
-      this.get_player(player_id).main_character.pos = pos;
-      this.to_next_player();
-    };
-
-    // hand over the control to the next player.
-    this.to_next_player = function () {
-      state.current_player_id += 1;
-      if (state.current_player_id > this.get_num_players()) {
-        state.current_player_id = 1;
-      }
-      if (state.current_player_id === state.first_player_id) {
-        state.turn_id += 1;
-      }
-
-      pending_cmds.push(["ask_movement", state.current_player_id]);
-    };
-
     this.pull_cmd = function () {
       return (pending_cmds.length > 0
               ? pending_cmds.splice(0, 1)[0]
               : null);
     };
   };  // End Core constructor
-  Core.MainStateEnum = Object.freeze({
-                                        INIT: 0,
-                                        GAME: 1,
-                                      });
-  Core.BoardSize = [/*row: */ 11, /*column: */11];
 
   // return module object
   return {
     Card: Card,
     Character: Character,
     Core: Core,
+    CoreClient: CoreClient,
     Player: Player
   };
   

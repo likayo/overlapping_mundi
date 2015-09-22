@@ -23,7 +23,7 @@ function (LkyEngine, utils) {
    *   consts: graphic constants
    *   input_collector: an object that collect the user input from this UI element.
    */
-  var BattleField = function BattleField(engine_, consts_) {
+  var BattleField = function BattleField (engine_, consts_) {
     /*
      *  PRIVATE MEMBERS
      */

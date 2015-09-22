@@ -148,7 +148,7 @@ function (LkyEngine, logic, ui, data, utils) {
     // this: Game object
     var i, j, mat;
     var watcher;
-    var player_id = cmd[1];
+    var player_id = cmd[1].player_id;
 
     var watcher_callback = function (game_state, logic_core) {
       // this: Watcher object
@@ -181,7 +181,7 @@ function (LkyEngine, logic, ui, data, utils) {
     // this: Game object
     var i, j,
         ch,
-        player_id = cmd[1],
+        player_id = cmd[1].player_id,
         watcher;
 
     var dfs = function dfs (mat, pos, steps) {
@@ -228,7 +228,7 @@ function (LkyEngine, logic, ui, data, utils) {
     // Search available movements
     ch = core.get_player(player_id).main_character;
     dfs.result = create_2d_array(this.consts.battle_field_size, Number.POSITIVE_INFINITY);
-    dfs(core.get_board_matrix(), ch.pos, 0);
+    dfs(core.generate_board_matrix(), ch.pos, 0);
     for (i = 0; i < this.consts.battle_field_size[0]; i++) {
       for (j = 0; j < this.consts.battle_field_size[1]; j++) {
         if (1 <= dfs.result[i][j] && dfs.result[i][j] <= ch.mov) {
@@ -290,8 +290,6 @@ function (LkyEngine, logic, ui, data, utils) {
      * and core logic.
      */
     init_game: function () {
-      var i, j, spr;
-
       state.reset(state.MainEnum.GAME);
       user_input.reset();
 
@@ -322,7 +320,7 @@ function (LkyEngine, logic, ui, data, utils) {
       ui_field = new ui.BattleField(engine, this.consts, user_input.ui_field);
       ui_field.init();
 
-      core = new logic.Core();
+      core = new logic.CoreClient();
       core.init();
 
       var reimu = new logic.Character(data.characters[0]);
@@ -364,7 +362,8 @@ function (LkyEngine, logic, ui, data, utils) {
       if (ui_field) {
         ui_field.update();
       }
-
+      
+      // Pull commands from core
       if (core) {
         cmd = core.pull_cmd();
         if (cmd) {
