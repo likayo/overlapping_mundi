@@ -25,7 +25,8 @@ function (LkyEngine, logic, ui, data, utils) {
   // UI elements
   var ui_field = null;
   // Core logic
-  var core = null;
+  var core_server = null;
+  var core_clients = null;
   // Watchers of user input
   var watchers = null;
   // Commands from core logic that is pending
@@ -45,6 +46,7 @@ function (LkyEngine, logic, ui, data, utils) {
           break;
         case this.MainEnum.GAME:
           this.main               = this.MainEnum.GAME;
+          this.cur_core_client_idx = 0;
           this.player_cards       = [];
           this.player_card_stack  = [new Card("A"), new Card("B"), new Card("C"),
                                      new Card("AA"), new Card("BB"), new Card("CC")];
@@ -150,12 +152,13 @@ function (LkyEngine, logic, ui, data, utils) {
     var watcher;
     var player_id = cmd[1].player_id;
 
-    var watcher_callback = function (game_state, logic_core) {
+    var watcher_callback = function (game_state, core_client) {
       // this: Watcher object
       if (this.collector.grid_clicked) {
-        logic_core.report_init_position(this.player_id, this.collector.grid_clicked);
-        this.ui_element.add_character(logic_core.get_player(this.player_id).main_character);
+        core_client.report_init_position(this.player_id, this.collector.grid_clicked);
+        this.ui_element.add_character(core_client.get_player(this.player_id).main_character);
         this.ui_element.disable_pos_selection();
+        game_state.cur_core_client_idx = 1 - game_state.cur_core_client_idx;
         return true;  // finish this watcher
       }
       return false;
@@ -209,14 +212,15 @@ function (LkyEngine, logic, ui, data, utils) {
       }
     };
 
-    var watcher_callback = function (game_state, logic_core) {
+    var watcher_callback = function (game_state, core_client) {
       // this: Watcher object
       if (this.collector.grid_clicked) {
-        logic_core.report_movement(this.player_id, this.collector.grid_clicked);
+        core_client.report_movement(this.player_id, this.collector.grid_clicked);
         this.ui_element.disable_pos_selection();
+        game_state.cur_core_client_idx = 1 - game_state.cur_core_client_idx;
         return true;  // finish this watcher
       } else if (this.collector.canceled) {
-        // TODO: cancel button
+        // TODO: logic of cancel button
         this.ui_element.disable_pos_selection();
       }
       return false;
@@ -226,9 +230,9 @@ function (LkyEngine, logic, ui, data, utils) {
       return false;
     }
     // Search available movements
-    ch = core.get_player(player_id).main_character;
+    ch = core_clients[state.cur_core_client_idx].get_player(player_id).main_character;
     dfs.result = create_2d_array(this.consts.battle_field_size, Number.POSITIVE_INFINITY);
-    dfs(core.generate_board_matrix(), ch.pos, 0);
+    dfs(core_clients[state.cur_core_client_idx].generate_board_matrix(), ch.pos, 0);
     for (i = 0; i < this.consts.battle_field_size[0]; i++) {
       for (j = 0; j < this.consts.battle_field_size[1]; j++) {
         if (1 <= dfs.result[i][j] && dfs.result[i][j] <= ch.mov) {
@@ -320,13 +324,18 @@ function (LkyEngine, logic, ui, data, utils) {
       ui_field = new ui.BattleField(engine, this.consts, user_input.ui_field);
       ui_field.init();
 
-      core = new logic.CoreClient();
-      core.init();
+      core_server = new logic.EmulatedCoreServer();
+      core_clients = [new logic.CoreClient(), new logic.CoreClient()];
+      core_clients[0].init(core_server, 0);
+      core_clients[1].init(core_server, 1);
 
+      state.cur_core_client_idx = 0;
       var reimu = new logic.Character(data.characters[0]);
-      core.report_new_player(reimu, []);
+      core_clients[state.cur_core_client_idx].report_new_player(reimu, []);
+      state.cur_core_client_idx = 1;
       var marisa = new logic.Character(data.characters[1]);
-      core.report_new_player(marisa, []);
+      core_clients[state.cur_core_client_idx].report_new_player(marisa, []);
+      state.cur_core_client_idx = 0;
     },
 
     /*
@@ -352,7 +361,7 @@ function (LkyEngine, logic, ui, data, utils) {
           break;
       }
       for (i = 0; i < watchers.length; i++) {
-        var finish = watchers[i].watch(state, core);
+        var finish = watchers[i].watch(state, core_clients[state.cur_core_client_idx]);
         if (finish) {
           watchers.splice(i, 1);
           i--;
@@ -364,8 +373,8 @@ function (LkyEngine, logic, ui, data, utils) {
       }
       
       // Pull commands from core
-      if (core) {
-        cmd = core.pull_cmd();
+      if (Array.isArray(core_clients) && core_clients[state.cur_core_client_idx]) {
+        cmd = core_clients[state.cur_core_client_idx].pull_cmd();
         if (cmd) {
           pending_cmds.push(cmd);
         }

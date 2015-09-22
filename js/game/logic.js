@@ -37,12 +37,6 @@ function (utils) {
     this.hp = null;
     this.sp = null;
 
-    // initialize character status
-    this.init = function (pos) {
-      this.pos = pos;
-      this.hp = this.init_hp;
-      this.sp = 0;
-    };
   };  // End Character constructor
 
   /*
@@ -71,6 +65,7 @@ function (utils) {
     var send_queue = [];
     var game_state = {
                         main: Core.MainStateEnum.INIT,
+                        player_to_client: {}, 
                         players: [],
                         player_is_init: [],
                         turn_id: null,
@@ -78,8 +73,8 @@ function (utils) {
                         current_player_id: null
                       };
 
-    this.push_send_queue = function (type, content) {
-      send_queue.push(JSON.stringify([type, content]));
+    this.push_send_queue = function (client_id, type, content) {
+      send_queue.push([client_id, JSON.stringify([type, content])]);
     };
     
     // TODO: remove this method
@@ -88,19 +83,23 @@ function (utils) {
     };
 
     // Receive JSON-formatted request
-    this.receive = function (json_request) {
+    this.receive = function (client_id, json_request) {
+      // json_request: [cmd_name, content]
       var request = JSON.parse(json_request);
       var cb = this["handle_" + request[0]];
       if (cb !== undefined) {
-        cb.call(this, request[1]);
+        cb.call(this, client_id, request[1]);
       }
     };
 
     // Send JSON-formatted command
-    this.send_cmd = function (send) {
-      return (send_queue.length > 0
-              ? send_queue.splice(0, 1)[0]
-              : null);
+    this.send_cmd = function (client_id) {
+      for (var i = 0; i < send_queue.length; i++) {
+        if (send_queue[i][0] === client_id) {
+          return send_queue.splice(i, 1)[0][1];
+        }
+      }
+      return null;
     };
 
     // get the total number of players
@@ -118,6 +117,13 @@ function (utils) {
       return this.get_player(game_state.current_player_id);
     };
 
+    this.init_character = function (character, init_pos) {
+      // initialize character status
+      character.pos = [init_pos[0], init_pos[1]];
+      character.hp = character.init_hp;
+      character.sp = 0;
+    };
+
     // finish init and start the game
     this.start_game = function (first_player_id) {
       game_state.main = Core.MainStateEnum.GAME;
@@ -125,7 +131,8 @@ function (utils) {
       game_state.first_player_id = first_player_id;
       game_state.current_player_id = first_player_id;
 
-      this.push_send_queue( "ask_movement",
+      this.push_send_queue( Number(game_state.player_to_client[first_player_id]),
+                            "ask_movement",
                             { player_id: game_state.current_player_id });
     };
 
@@ -139,12 +146,13 @@ function (utils) {
         game_state.turn_id += 1;
       }
 
-      this.push_send_queue( "ask_movement",
+      this.push_send_queue( Number(game_state.player_to_client[game_state.current_player_id]),
+                            "ask_movement",
                             { player_id: game_state.current_player_id });
     };
 
     // COMMAND report_new_player: add a new player in the init state
-    this.handle_report_new_player = function (content) {
+    this.handle_report_new_player = function (client_id, content) {
       if (game_state.main !== Core.MainStateEnum.INIT) {
         throw new Error("CoreClient.report_new_player: not allowed.");
       }
@@ -152,16 +160,18 @@ function (utils) {
       var player_id = game_state.players.length + 1;
       game_state.players.push(player);
       game_state.player_is_init.push(false);
-      this.push_send_queue("tell_player_id", { player_id: player_id });
-      this.push_send_queue("ask_init_position", { player_id: player_id });
+      game_state.player_to_client[String(player_id)] = client_id;
+      this.push_send_queue(client_id, "tell_player_id", { player_id: player_id });
+      this.push_send_queue(client_id, "ask_init_position", { player_id: player_id });
     };
 
     // COMMAND report_init_position: report the init position of a player
-    this.handle_report_init_position = function (content) {
+    this.handle_report_init_position = function (client_id, content) {
+      // FIXME: validate player_id with client_id
       var is_true = function (x) {
         return !!x;
       };
-      this.get_player(content.player_id).main_character.init(content.pos);
+      this.init_character(this.get_player(content.player_id).main_character, content.pos);
       game_state.player_is_init[content.player_id - 1] = true;
       if (game_state.player_is_init.every(is_true)) {
         this.start_game(1);
@@ -169,7 +179,8 @@ function (utils) {
     };
     
     // COMMAND report_movement: report the movement of a player's main character
-    this.handle_report_movement = function (content) {
+    this.handle_report_movement = function (client_id, content) {
+      // FIXME: validate player_id with client_id
       this.get_player(content.player_id).main_character.pos = content.pos;
       this.to_next_player();
     };
@@ -180,17 +191,19 @@ function (utils) {
    * The core of game logic.
    */
   var CoreClient = function CoreClient () {
+    var client_id = null;
     var client_state = null;
     var pending_cmds = null;
     var server = null;
 
-    this.init = function () {
+    this.init = function (server_, client_id_) {
       var self = this;
+      client_id = client_id_;
       client_state = {
                         player_id: null
                       };
       pending_cmds = [];
-      server = new EmulatedCoreServer();
+      server = server_;
       window.setInterval( function () { 
                             return self.receive_cmd();
                           }, 200);
@@ -198,13 +211,14 @@ function (utils) {
 
     // Send JSON-formatted request
     this.send_request = function (type, content) {
-      server.receive(JSON.stringify([type, content]));
+      server.receive(client_id, JSON.stringify([type, content]));
     };
 
     // Receive JSON-formatted commands
     this.receive_cmd = function () {
-      while (true) {
-        var json_cmd = server.send_cmd();
+      var loop = true;
+      while (loop) {
+        var json_cmd = server.send_cmd(client_id);
         if (!!json_cmd) {  // if receive a cmd
           var cmd = JSON.parse(json_cmd);
           if (cmd[0].startsWith("tell_")) {
@@ -215,7 +229,7 @@ function (utils) {
             pending_cmds.push(cmd);
           }
         } else {
-          break;
+          loop = false;
         }
       }
     };
@@ -281,6 +295,7 @@ function (utils) {
     Character: Character,
     Core: Core,
     CoreClient: CoreClient,
+    EmulatedCoreServer: EmulatedCoreServer,
     Player: Player
   };
   
