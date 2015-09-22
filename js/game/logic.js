@@ -67,7 +67,7 @@ function (utils) {
                                       });
   Core.BoardSize = [/* row: */ 11, /* column: */ 11];
 
-  var EmulatedServer = function EmulatedServer () {
+  var EmulatedCoreServer = function EmulatedCoreServer () {
     var send_queue = [];
     var game_state = {
                         main: Core.MainStateEnum.INIT,
@@ -87,6 +87,7 @@ function (utils) {
       return game_state;
     };
 
+    // Receive JSON-formatted request
     this.receive = function (json_request) {
       var request = JSON.parse(json_request);
       var cb = this["handle_" + request[0]];
@@ -95,6 +96,7 @@ function (utils) {
       }
     };
 
+    // Send JSON-formatted command
     this.send_cmd = function (send) {
       return (send_queue.length > 0
               ? send_queue.splice(0, 1)[0]
@@ -122,6 +124,20 @@ function (utils) {
       game_state.turn_id = 1;
       game_state.first_player_id = first_player_id;
       game_state.current_player_id = first_player_id;
+
+      this.push_send_queue( "ask_movement",
+                            { player_id: game_state.current_player_id });
+    };
+
+    // hand over the control to the next player.
+    this.to_next_player = function () {
+      game_state.current_player_id += 1;
+      if (game_state.current_player_id > this.get_num_players()) {
+        game_state.current_player_id = 1;
+      }
+      if (game_state.current_player_id === game_state.first_player_id) {
+        game_state.turn_id += 1;
+      }
 
       this.push_send_queue( "ask_movement",
                             { player_id: game_state.current_player_id });
@@ -157,20 +173,6 @@ function (utils) {
       this.get_player(content.player_id).main_character.pos = content.pos;
       this.to_next_player();
     };
-
-    // hand over the control to the next player.
-    this.to_next_player = function () {
-      game_state.current_player_id += 1;
-      if (game_state.current_player_id > this.get_num_players()) {
-        game_state.current_player_id = 1;
-      }
-      if (game_state.current_player_id === game_state.first_player_id) {
-        game_state.turn_id += 1;
-      }
-
-      this.push_send_queue( "ask_movement",
-                            { player_id: game_state.current_player_id });
-    };
   };
 
   /*
@@ -188,16 +190,18 @@ function (utils) {
                         player_id: null
                       };
       pending_cmds = [];
-      server = new EmulatedServer();
+      server = new EmulatedCoreServer();
       window.setInterval( function () { 
                             return self.receive_cmd();
                           }, 200);
     };
 
+    // Send JSON-formatted request
     this.send_request = function (type, content) {
       server.receive(JSON.stringify([type, content]));
     };
 
+    // Receive JSON-formatted commands
     this.receive_cmd = function () {
       while (true) {
         var json_cmd = server.send_cmd();
