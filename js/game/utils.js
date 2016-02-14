@@ -17,7 +17,13 @@
     return arr;
   };
 
+  // Return a shallow copy of an array.
+  var clone_array = function (arr) {
+    return arr.map(x => x);
+  };
+
   return {
-    create_2d_array: create_2d_array
+    create_2d_array: create_2d_array,
+    clone_array: clone_array
   };
 });

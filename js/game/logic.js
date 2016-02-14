@@ -86,9 +86,9 @@ function (utils) {
     this.receive = function (client_id, json_request) {
       // json_request: [cmd_name, content]
       var request = JSON.parse(json_request);
-      var cb = this["handle_" + request[0]];
-      if (cb !== undefined) {
-        cb.call(this, client_id, request[1]);
+      var callback = this["handle_" + request[0]];
+      if (callback !== undefined) {
+        callback.call(this, client_id, request[1]);
       }
     };
 
@@ -117,7 +117,7 @@ function (utils) {
       return this.get_player(game_state.current_player_id);
     };
 
-    this.init_character = function (character, init_pos) {
+    var _init_character = function (character, init_pos) {
       // initialize character status
       character.pos = [init_pos[0], init_pos[1]];
       character.hp = character.init_hp;
@@ -152,6 +152,7 @@ function (utils) {
     };
 
     // COMMAND report_new_player: add a new player in the init state
+    // content: { "character": ..., "cards": ... }
     this.handle_report_new_player = function (client_id, content) {
       if (game_state.main !== Core.MainStateEnum.INIT) {
         throw new Error("CoreClient.report_new_player: not allowed.");
@@ -166,22 +167,26 @@ function (utils) {
     };
 
     // COMMAND report_init_position: report the init position of a player
+    // content: { "player_id": ..., "pos": ... }
     this.handle_report_init_position = function (client_id, content) {
       // FIXME: validate player_id with client_id
-      var is_true = function (x) {
-        return !!x;
-      };
-      this.init_character(this.get_player(content.player_id).main_character, content.pos);
+      _init_character.call(this, this.get_player(content.player_id).main_character, content.pos);
       game_state.player_is_init[content.player_id - 1] = true;
-      if (game_state.player_is_init.every(is_true)) {
+      if (game_state.player_is_init.every(x => !!x)) {
         this.start_game(1);
       }
     };
     
     // COMMAND report_movement: report the movement of a player's main character
+    // content: { "player_id": ..., "pos": ... }
+    // If pos is null, that means user cancelled the movement.
     this.handle_report_movement = function (client_id, content) {
       // FIXME: validate player_id with client_id
-      this.get_player(content.player_id).main_character.pos = content.pos;
+      if (content.pos === null) {
+        ;
+      } else {
+        this.get_player(content.player_id).main_character.pos = content.pos;
+      }
       this.to_next_player();
     };
   };
@@ -252,9 +257,15 @@ function (utils) {
     };
 
     // COMMAND report_movement: report the movement of a player's main character
+    // If pos is null, that means the movement is cancelled.
     this.report_movement = function (player_id, pos) {
-      this.send_request("report_movement",
-                        { player_id: player_id, pos: pos });
+      if (pos === null) {
+        this.send_request("report_movement",
+                          { player_id: player_id, pos: null });
+      } else {
+        this.send_request("report_movement",
+                          { player_id: player_id, pos: pos });
+      }
     };
 
     // get the total number of players

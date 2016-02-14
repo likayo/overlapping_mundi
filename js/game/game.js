@@ -16,21 +16,18 @@ function (LkyEngine, logic, ui, data, utils) {
   var engine = null;
   // Sprites
   var btn_start_game_sprite = null,
-      map_sprite = null,
-      reimu_sprite = null,
-      marisa_sprite = null,
       card_stack_sprite = null,
-      cards_sprite = null,
-      mark_sprites = null;
+      cards_sprite = null;
   // UI elements
-  var ui_field = null;
+  var ui_battlefield = null;
+  var ui_card_sel = null;
   // Core logic
   var core_server = null;
   var core_clients = null;
   // Watchers of user input
   var watchers = null;
   // Commands from core logic that is pending
-  var pending_cmds = null;
+  var pending_ui_cmds = null;
   // UI state
   var state = {
     MainEnum: Object.freeze({
@@ -42,7 +39,6 @@ function (LkyEngine, logic, ui, data, utils) {
       switch (main_state) {
         case this.MainEnum.TITLE:
           this.main               = this.MainEnum.TITLE;
-          this.btn_start_game_clicked = false;
           break;
         case this.MainEnum.GAME:
           this.main               = this.MainEnum.GAME;
@@ -60,7 +56,7 @@ function (LkyEngine, logic, ui, data, utils) {
   var user_input = {
     // Will be called at the start of each frame
     reset: function () {
-      this.new_game_clicked   = null;
+      this.btn_start_game_clicked = false;
       this.card_stack_clicked = false;
     }
   };
@@ -68,33 +64,6 @@ function (LkyEngine, logic, ui, data, utils) {
   /*
    *  PRIVATE RENDERING FUNCTION
    */
-  var render_cards = function (ctx) {
-    // this: cards_sprite
-    var i,
-        topleft,
-        card_size = [60, 80],
-        interval = 20;
-
-    ctx.beginPath();
-    ctx.strokeStyle = "red";
-    ctx.lineWidth   = 5;
-    ctx.font        = this.text_font;
-    ctx.textAlign   = "center";
-    for (i in this.state.player_cards) {
-      topleft = [this.topleft[0] + i * card_size[0] + i * interval,
-                 this.topleft[1]];
-      ctx.beginPath();
-      ctx.fillStyle   = "white";
-      ctx.rect(topleft[0], topleft[1], card_size[0], card_size[1]);
-      ctx.fill();
-      ctx.stroke();
-      ctx.fillStyle   = "black";
-      ctx.fillText(this.state.player_cards[i].name,
-                  topleft[0] + card_size[0] / 2,
-                  topleft[1] + card_size[1] / 2);
-    }
-  };
-
   var render_card_stack = function (ctx) {
     // this: card_stack_sprite
     var i,
@@ -144,7 +113,7 @@ function (LkyEngine, logic, ui, data, utils) {
   };
 
   /*
-   *  PRIVATE HANDLER FUNCTION
+   *  PRIVATE UI COMMAND HANDLER FUNCTION
    */
   var handle_ask_init_position = function (cmd) {
     // this: Game object
@@ -164,7 +133,7 @@ function (LkyEngine, logic, ui, data, utils) {
       return false;
     };
 
-    if (ui_field.pos_selection_enabled) {   // UI elements occupied
+    if (ui_battlefield.pos_selection_enabled) {   // UI elements occupied
       return false;
     }
     mat = create_2d_array(this.consts.battle_field_size, false);
@@ -173,8 +142,8 @@ function (LkyEngine, logic, ui, data, utils) {
         mat[(i < 3? i: i + 5)][(j < 3? j: j + 5)] = true;
       }
     }
-    ui_field.enable_pos_selection(mat);
-    watcher = ui_field.create_watcher(watcher_callback);
+    ui_battlefield.enable_pos_selection(mat);
+    watcher = ui_battlefield.create_watcher(watcher_callback);
     watcher.player_id = player_id;
     watchers.push(watcher);
     return true;
@@ -219,14 +188,16 @@ function (LkyEngine, logic, ui, data, utils) {
         this.ui_element.disable_pos_selection();
         game_state.cur_core_client_idx = 1 - game_state.cur_core_client_idx;
         return true;  // finish this watcher
-      } else if (this.collector.canceled) {
-        // TODO: logic of cancel button
+      } else if (this.collector.canceled) { // movement cancelled
+        core_client.report_movement(this.player_id, null);
         this.ui_element.disable_pos_selection();
+        game_state.cur_core_client_idx = 1 - game_state.cur_core_client_idx;
+        return true;  // finish this watcher
       }
       return false;
     };
 
-    if (ui_field.pos_selection_enabled) {   // UI elements occupied
+    if (ui_battlefield.pos_selection_enabled) {   // UI elements occupied
       return false;
     }
     // Search available movements
@@ -242,8 +213,8 @@ function (LkyEngine, logic, ui, data, utils) {
         }
       }
     }
-    ui_field.enable_pos_selection(dfs.result, ui.BattleField.Cancelable);
-    watcher = ui_field.create_watcher(watcher_callback);
+    ui_battlefield.enable_pos_selection(dfs.result, ui.BattleField.CANCELABLE);
+    watcher = ui_battlefield.create_watcher(watcher_callback);
     watcher.player_id = player_id;
     watchers.push(watcher);
     return true;
@@ -256,12 +227,14 @@ function (LkyEngine, logic, ui, data, utils) {
       text_font: "12pt 微软雅黑",
       battle_field_size: logic.Core.BoardSize,
       layout: {
-        canvas: [800, 750],
         //                tl_x, tl_y, width, height
+        canvas_size:      [           800, 900],
         btn_start_game:   [ 300, 200, 100, 100],
         card_stack:       [ 400, 200,  80, 100],
         map:              [  20,  20, 700, 700],
-        map_grid_size:    [Math.ceil(671 / 11), Math.floor(671 / 11)]
+        map_grid_size:    [           Math.ceil(671 / 11), Math.floor(671 / 11)],
+        card_size:        [            60,  80],
+        card_selection:   [  20, 740, 700,  80]
       }
     },
 
@@ -272,9 +245,9 @@ function (LkyEngine, logic, ui, data, utils) {
     init: function () {
       state.reset(state.MainEnum.TITLE);
       user_input.reset();
-      engine.init(this.consts.layout.canvas);
+      engine.init(this.consts.layout.canvas_size);
       watchers = [];
-      pending_cmds = [];
+      pending_ui_cmds = [];
 
       btn_start_game_sprite = engine.create_sprite(
                                 this.consts.layout.btn_start_game.slice(0, 2),
@@ -321,8 +294,14 @@ function (LkyEngine, logic, ui, data, utils) {
       cards_sprite.state = state;
       cards_sprite.set_user_render(render_cards);
 
-      ui_field = new ui.BattleField(engine, this.consts, user_input.ui_field);
-      ui_field.init();
+      ui_battlefield = new ui.BattleField(engine, this.consts);
+      ui_battlefield.init();
+      
+      ui_card_sel = new ui.CardSelection(engine, {
+                                          rect: this.consts.layout.card_selection,
+                                          card_size: this.consts.layout.card_size});
+      ui_card_sel.init();
+      ui_card_sel.display_cards([new Card("Renying")]);
 
       core_server = new logic.EmulatedCoreServer();
       core_clients = [new logic.CoreClient(), new logic.CoreClient()];
@@ -368,35 +347,35 @@ function (LkyEngine, logic, ui, data, utils) {
         }
       }
       user_input.reset();
-      if (ui_field) {
-        ui_field.update();
+      if (ui_battlefield) {
+        ui_battlefield.update();
       }
       
       // Pull commands from core
       if (Array.isArray(core_clients) && core_clients[state.cur_core_client_idx]) {
         cmd = core_clients[state.cur_core_client_idx].pull_cmd();
         if (cmd) {
-          pending_cmds.push(cmd);
+          pending_ui_cmds.push(cmd);
         }
       }
-      for (i = 0; i < pending_cmds.length; i++) {
-        var success = this.handle_cmd(pending_cmds[i]);
+      for (i = 0; i < pending_ui_cmds.length; i++) {
+        var success = this.handle_ui_cmd(pending_ui_cmds[i]);
         if (success) {
-          pending_cmds.splice(i, 1);
+          pending_ui_cmds.splice(i, 1);
           i--;
         }
       }
     },
 
     // return true if the command is handled successfully
-    handle_cmd: function (cmd) {
+    handle_ui_cmd: function (cmd) {
       switch (cmd[0]) {
         case "ask_init_position":
           return handle_ask_init_position.call(this, cmd);
         case "ask_movement":
           return handle_ask_movement.call(this, cmd);
         default:
-          throw new Error("handle_cmd: unknwon cmd type");
+          throw new Error("handle_ui_cmd: unknwon cmd type");
       }
     },
 
