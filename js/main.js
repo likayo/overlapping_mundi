@@ -17,8 +17,9 @@ requirejs.config({
             ]
 });
 
-require(["game"], function(game) {
+require(["game", "game/cmdline_client"], function(game, cmdline_client) {
   game.Game.run();
+  cmdline_client.CmdlineClient.run();
 });
 
 document.getElementById("changelog").innerHTML =  "<p>2016/02/13 ver 0.012</p>" +
