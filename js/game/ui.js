@@ -263,6 +263,8 @@ function (LkyEngine, utils) {
       ctx.beginPath();
       if (this.mouseon) {
         ctx.strokeStyle = "red";
+      } else if (this.selected) {
+        ctx.strokeStyle = "crimson";
       } else {
         ctx.strokeStyle = "black";
       }
@@ -290,7 +292,7 @@ function (LkyEngine, utils) {
       var interval = 20;
       if (cards.length >= 2) {
         var hblank = config.rect[2] - cards.length * config.card_size[0];
-        interval = min(interval, hblank / (cards.length - 1));
+        interval = Math.min(interval, hblank / (cards.length - 1));
       }
       for (var i = 0; i < cards.length; i++) {
         var topleft = [ config.rect[0] + i * (config.card_size[0] + interval),

@@ -16,11 +16,10 @@ function (LkyEngine, logic, ui, data, utils) {
   var engine = null;
   // Sprites
   var btn_start_game_sprite = null,
-      card_stack_sprite = null,
-      cards_sprite = null;
+      card_stack_sprite = null;
   // UI elements
-  var ui_battlefield = null;
-  var ui_card_sel = null;
+  var ui_battlefield = null,
+      ui_card_sel = null;
   // Core logic
   var core_server = null;
   var core_clients = null;
@@ -230,11 +229,11 @@ function (LkyEngine, logic, ui, data, utils) {
         //                tl_x, tl_y, width, height
         canvas_size:      [           800, 900],
         btn_start_game:   [ 300, 200, 100, 100],
-        card_stack:       [ 400, 200,  80, 100],
+        card_stack:       [  30, 750,  80, 100],
         map:              [  20,  20, 700, 700],
         map_grid_size:    [           Math.ceil(671 / 11), Math.floor(671 / 11)],
         card_size:        [            60,  80],
-        card_selection:   [  20, 740, 700,  80]
+        card_selection:   [ 140, 750, 600,  80]
       }
     },
 
@@ -285,15 +284,6 @@ function (LkyEngine, logic, ui, data, utils) {
         user_input.card_stack_clicked = true;
       });
 
-      cards_sprite = engine.create_sprite(
-                        [50, 50],
-                        [0, 0],
-                        50,
-                        LkyEngine.Sprite.TypeEnum.USER_CUSTIOMIZED);
-      cards_sprite.text_font = this.consts.text_font;
-      cards_sprite.state = state;
-      cards_sprite.set_user_render(render_cards);
-
       ui_battlefield = new ui.BattleField(engine, this.consts);
       ui_battlefield.init();
       
@@ -301,7 +291,7 @@ function (LkyEngine, logic, ui, data, utils) {
                                           rect: this.consts.layout.card_selection,
                                           card_size: this.consts.layout.card_size});
       ui_card_sel.init();
-      ui_card_sel.display_cards([new Card("Renying")]);
+      ui_card_sel.display_cards([new Card("Renying"), new Card("Renying"), new Card("Renying"), new Card("Renying"), new Card("Renying"), new Card("Renying")]);
 
       core_server = new logic.EmulatedCoreServer();
       core_clients = [new logic.CoreClient(), new logic.CoreClient()];
