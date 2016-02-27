@@ -17,6 +17,17 @@ var GameState = function () {
     };
   };
 
+  var create_2d_array = function (dim, init) {
+    var arr = [];
+    for (var i = 0; i < dim[0]; i++) {
+      arr.push(new Array(dim[1]));
+      for (var j = 0; j < dim[1]; j++) {
+        arr[i][j] = init;
+      }
+    }
+    return arr;
+  };
+
   /*
    * Card (name)
    *
@@ -104,6 +115,20 @@ var GameState = function () {
       return Number(s.player_to_client[player_id]);
     };
 
+    this.get_board_matrix = function () {
+      var ch;
+      var mat = create_2d_array(GameState.BoardSize, null);
+      for (var k = 1; k <= this.get_num_players(); k++) {
+        ch = this.get_player(k).main_character;
+        mat[ch.pos[0]][ch.pos[1]] = ch;
+      }
+      return mat;
+    };
+
+    /*
+     * NOTE: All follwowing functions will be synchronized to all clients by RPC.
+     */
+
     this.add_new_player = function (client_id, main_character, cards) {
       var player_id = s.players.length + 1;
       var player = new Player(player_id, main_character, cards);
@@ -150,13 +175,14 @@ var GameState = function () {
     };
     this.to_next_player.rpc_enabled = true;
 
+    // Used to load a snapshot
     this.__copy_from = function (s_) {
       s = s_;
     };
     this.__copy_from.rpc_enabled = true;
 
-    // if this code is run on server side, decorate RPC functions
     if (on_server_side) {
+      // If this code is run on server side, decorate RPC functions
       this.set_rpc_callback = function (rpc_cb) {
         if (this.rpc_cb === undefined) {
           this.rpc_cb = rpc_cb;
@@ -171,6 +197,7 @@ var GameState = function () {
         }
       };
 
+      // Take a snapshot of the game state.
       this.refresh = function () {
         this.__copy_from(s);
       };

@@ -92,7 +92,6 @@ var CoreServer = function CoreServer (data_characters, data_cards) {
     }
     game_state.add_new_player(client_id, content.character, content.cards);
     var new_player_id = game_state.client_to_player_id(client_id);
-    this.send_cmd(client_id, "tell_player_id", { player_id: new_player_id });
     this.send_cmd(client_id, "ask_init_position", { player_id: new_player_id });
   };
 
@@ -101,11 +100,13 @@ var CoreServer = function CoreServer (data_characters, data_cards) {
   this.handle_report_init_position = function (client_id, content) {
     // FIXME: validate player_id with client_id
     game_state.init_character(content.player_id, content.pos)
-    if (game_state.get("player_is_init").every(x => !!x)) {
-      this.start_game(1);
+    if (game_state.get_num_players() >= 2 &&
+        game_state.get("player_is_init").every(x => !!x)) {
+      game_state.start_game(1);
+      // TODO: draw card phase
       this.send_cmd(game_state.player_to_client(game_state.get("first_player_id")),
                     "ask_movement",
-                    { player_id: s.current_player_id });
+                    { player_id: game_state.get("current_player_id") });
     }
   };
   
