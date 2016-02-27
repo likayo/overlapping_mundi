@@ -14,13 +14,23 @@ requirejs.config({
                 name: "data",
                 main: "data"
               }
-            ]
+            ],
+  paths: {
+    "game_state": ["http://localhost:13140/game_state"]
+  },
+  shim: {
+    "game_state": {
+      exports: "GameState"
+    }
+  }
 });
 
-require(["game", "game/cmdline_client"], function(game, cmdline_client) {
-  game.Game.run();
-  cmdline_client.CmdlineClient.run();
-});
+require(["game", "game/cmdline_client"],
+  function(game, cmdline_client) {
+    game.Game.run();
+    cmdline_client.CmdlineClient.run();
+  }
+);
 
 document.getElementById("changelog").innerHTML =  "<p>2016/02/13 ver 0.012</p>" +
                                                   "<p>2015/09/21 ver 0.011</p>" +
