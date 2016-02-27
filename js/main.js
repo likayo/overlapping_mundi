@@ -9,18 +9,25 @@ requirejs.config({
               {
                 name: "game",
                 main: "game"
-              },
-              {
-                name: "data",
-                main: "data"
               }
             ],
   paths: {
-    "game_state": ["http://localhost:13140/game_state"]
+    "game_state": ["http://localhost:13140/game_state"],
+    "data": ["http://localhost:13140/data"]
   },
   shim: {
     "game_state": {
       exports: "GameState"
+    }
+  },
+  // Refer to http://jaketrent.com/post/cross-domain-requirejs-text/7
+  config: {
+    text: {
+      useXhr: function (url, protocol, hostname, port) {
+        // allow cross-domain requests
+        // remote server allows CORS
+        return true;
+      }
     }
   }
 });
