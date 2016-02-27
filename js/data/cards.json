@@ -34,11 +34,59 @@
     },
 
     {
+        "id": 2000,
+        "name": "废弃炸弹再利用",
+        "main_type": "ranged_attack",
+        "sub_type": "物理",
+        "atk": 200,
+        "range": [2, 3],
+        "mov_offset": 0,
+        "instruction": "这张卡在结束流程以外的场合从手牌送入弃牌区，可以把这张卡和随机一张弃牌区的卡一起送去失落之地，从卡组抽一张卡",
+        "illustrator": "酥酥"
+    },
+    {
+        "id": 2001,
+        "name": "飞刀",
+        "main_type": "ranged_attack",
+        "sub_type": "物理",
+        "atk": 500,
+        "range": [1, 4],
+        "mov_offset": -1,
+        "instruction": "在攻击没有命中的场合可以把此卡送去失落之地，然后从卡组选择一张名字带有[飞刀]的卡加入手牌",
+        "illustrator": "dhiea"
+    },
+
+    {
+        "id": 3000,
+        "name": "御币",
+        "main_type": "item",
+        "instruction": "使用对战卡时攻击力增加100",
+        "illustrator": "姬saki"
+    },
+    {
+        "id": 3001,
+        "name": "魔女的扫帚",
+        "main_type": "item",
+        "instruction": "基础移动力+1",
+        "illustrator": "为嘛子"
+    },
+
+    {
         "id": 4000,
         "name": "神迹",
         "main_type": "magic",
+        "sub_type": "normal",
         "instruction": "下个自己回合开始，自身hp+800",
         "illustrator": "dhiea"
+    },
+
+    {
+        "id": 5000,
+        "name": "桃子",
+        "main_type": "magic",
+        "sub_type": "instant",
+        "instruction": "恢复500HP，然后此卡送进失落之地",
+        "illustrator": "kNickers"
     },
 
     {
@@ -51,10 +99,44 @@
 
     {
         "id": 10000,
+        "name": "暴力巫女",
+        "main_type": "spell_card",
+        "character_name": "博丽灵梦",
+        "cost": 3,
+        "ask_sc": false,
+        "instruction": "从本回合开始到第3个自己回合结束，灵梦使用对战卡时增加额外100点攻击力，范围+1",
+        "illustrator": "亜音"
+    },
+
+    {
+        "id": 10001,
+        "name": "阴阳玉",
+        "main_type": "spell_card",
+        "character_name": "博丽灵梦",
+        "cost": 5,
+        "ask_sc": false,
+        "instruction": "人物一侧3x3的范围造成800xN点伤害，敌我不分，使用时投掷两枚硬币，N为投掷出来的硬币的正面数量",
+        "illustrator": "亜音"
+    },
+
+    {
+        "id": 10002,
+        "name": "梦想天生",
+        "main_type": "spell_card",
+        "character_name": "博丽灵梦",
+        "cost": 10,
+        "ask_sc": true,
+        "instruction": "全体敌方造成900点伤害，同时所有我方的角色回复500HP",
+        "illustrator": "亜音"
+    },
+
+    {
+        "id": 10003,
         "name": "火力全开",
         "main_type": "spell_card",
         "character_name": "雾雨魔理沙",
         "cost": 3,
+        "ask_sc": false,
         "instruction": "从本回合开始到第2个自己回合结束，远战卡攻击力上升100，同时最大范围+1",
         "illustrator": "零花"
     }
