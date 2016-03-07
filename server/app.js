@@ -9,48 +9,36 @@ app.listen(13140);
 
 function handler (req, res) {
   var url = req.url.replace(/\/?(?:\?.*)?$/, "");
+  var fn = null;
+  var cors = false; // Cross-Orgin Resource Sharing
   if (url === "/game_state.js") {
-    fs.readFile(__dirname + url,
-      function (err, data) {
-        if (err) {
-          res.writeHead(500);
-          return res.end("Error loading " + url);
-        }
-        res.writeHead(200);
-        res.end(data);
-      }
-    );
+    fn = __dirname + url;
   } else if (url.startsWith("/data")) {
-    console.log(__dirname + url);
-    fs.readFile(__dirname + url,
-      function (err, data) {
-        if (err) {
-          res.writeHead(500);
-          return res.end("Error loading " + url);
-        }
-        res.writeHead(200, {
-          // Website you wish to allow to connect
-          "Access-Control-Allow-Origin": "*",
-          // // Request methods you wish to allow
-          "Access-Control-Allow-Methods": "GET"
-        });
-        res.end(data);
-      }
-    );
+    fn = __dirname + url;
+    cors = true;
   } else {
-    fs.readFile(__dirname + './index.html',
-      function (err, data) {
-        if (err) {
-          res.writeHead(500);
-          return res.end('Error loading index.html');
-        }
-
-        res.writeHead(200);
-        res.end(data);
-      }
-    );
+    fn = __dirname + "./index.html";
   }
-}
+
+  console.log(fn);
+  fs.readFile(fn, function (err, data) {
+    if (err) {
+      res.writeHead(500);
+      return res.end("Error loading " + url);
+    }
+    if (cors) {
+      res.writeHead(200, {
+        // Website you wish to allow to connect
+        "Access-Control-Allow-Origin": "*",
+        // // Request methods you wish to allow
+        "Access-Control-Allow-Methods": "GET"
+      });
+    } else {
+      res.writeHead(200);
+    }
+    res.end(data);
+  });
+};
 
 var data_characters = require("./data/characters");
 var data_cards = require("./data/cards");
