@@ -39,7 +39,7 @@ require(["game", "game/cmdline_client"],
   }
 );
 
-document.getElementById("changelog").innerHTML =  "<p>2016/02/13 ver 0.015</p>" +
+document.getElementById("changelog").innerHTML =  "<p>2016/02/27 ver 0.015</p>" +
                                                   "<p>2016/02/13 ver 0.012</p>" +
                                                   "<p>2015/09/21 ver 0.011</p>" +
                                                   "<p>2015/04/07 ver 0.010</p>" +

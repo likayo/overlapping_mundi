@@ -3,8 +3,8 @@
  * Game main loop.
  */
 
-;define(["lkyengine", "./logic", "./ui", "./data", "./utils"],
-function (LkyEngine, logic, ui, data, utils) {
+;define(["lkyengine", "./logic", "./ui", "./db", "./utils"],
+function (LkyEngine, logic, ui, db, utils) {
   "use strict";
   var Card = logic.Card;
   var create_2d_array = utils.create_2d_array;
@@ -299,10 +299,10 @@ function (LkyEngine, logic, ui, data, utils) {
       core_clients[1].init(core_server, 1);
 
       state.cur_core_client_idx = 0;
-      var reimu = new logic.Character(data.characters[0]);
+      var reimu = new logic.Character(db.characters[0]);
       core_clients[state.cur_core_client_idx].report_new_player(reimu, []);
       state.cur_core_client_idx = 1;
-      var marisa = new logic.Character(data.characters[1]);
+      var marisa = new logic.Character(db.characters[1]);
       core_clients[state.cur_core_client_idx].report_new_player(marisa, []);
       state.cur_core_client_idx = 0;
     },

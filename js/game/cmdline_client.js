@@ -3,28 +3,11 @@
  * A command line client.
  */
 
-;define(["./utils", "./data", "game_state"],
-function (utils, data, GameState) {
+;define(["./utils", "./db", "game_state"],
+function (utils, db, GameState) {
   "use strict";
   var create_2d_array = utils.create_2d_array;
   utils = undefined;
-
-  // db object
-  var db = {};
-  db.characters = data.characters;
-  db.cards = data.cards;
-  db.characters.by_id = function (i) {
-    return this.find(x => (x.id === i));
-  };
-  db.characters.by_name = function (name) {
-    return this.find(x => (x.name === name));
-  };
-  db.cards.by_id = function (i) {
-    return this.find(x => (x.id === i));
-  };
-  db.cards.by_name = function (name) {
-    return this.find(x => (x.name === name));
-  };
 
   /*
    * ClientSideRpcManager
