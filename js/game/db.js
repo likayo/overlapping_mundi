@@ -12,6 +12,7 @@ function (data_characters, data_cards) {
     characters: JSON.parse(data_characters),
     cards: JSON.parse(data_cards)
   };
+  // Return undefined if not found
   db.characters.by_id = function (i) {
     return this.find(x => (x.id === i));
   };

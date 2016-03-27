@@ -1,6 +1,8 @@
 "use strict";
 
 var GameState = require("./game_state");
+var db = require("./db_");
+var omg = require("./omg");
 
 var ServerSideRpcManager = function ServerSideRpcManager () {
   var rpc_state = {
@@ -40,25 +42,8 @@ var ServerSideRpcManager = function ServerSideRpcManager () {
   };
 };
 
-var CoreServer = function CoreServer (data_characters, data_cards) {
+var CoreServer = function CoreServer () {
   var client_to_socket = {};
-
-  // db object
-  var db = {};
-  db.characters = data_characters;
-  db.cards = data_cards;
-  db.characters.by_id = function (i) {
-    return this.find(x => (x.id === i));
-  };
-  db.characters.by_name = function (name) {
-    return this.find(x => (x.name === name));
-  };
-  db.cards.by_id = function (i) {
-    return this.find(x => (x.id === i));
-  };
-  db.cards.by_name = function (name) {
-    return this.find(x => (x.name === name));
-  };
 
   var game_state = new GameState(db);
   var rpc_manager = new ServerSideRpcManager();

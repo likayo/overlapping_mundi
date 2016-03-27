@@ -100,7 +100,14 @@ function (utils, db, GameState) {
           }
         } else if (type === "ask_player_build") {
           var reimu_data = db.characters.by_name("博丽灵梦");
-          self.report_new_player(new GameState.Card(reimu_data.id, reimu_data.name), []);
+          var cards = (["御币", "神迹", "桃子"]).map(
+            function (name) {
+              var d = db.cards.by_name(name);
+              return new GameState.Card(d.id, d.name);
+            }
+          );
+          self.report_new_player(new GameState.Character(reimu_data.id, reimu_data.name),
+                                  cards);
         } else if (type === "ask_init_position") {
           var mat = create_2d_array(GameState.BoardSize, false);
           for (var i = 0; i < 6; i++) {

@@ -36,6 +36,8 @@ var GameState = function () {
     // CONSTANT PUBLIC MEMBERS
     this.id = id;
     this.name = name;
+    // VOLATILE PUBLIC MEMBERS
+    this.instance_id = null;
   };  // End Card constructor
 
   /*
@@ -62,13 +64,16 @@ var GameState = function () {
    * Args:
    *   id: the player id
    *   main_character: a Character object
-   *   cards: the card set of the player
+   *   card_stack: the card set of the player
    */
-  var Player = function Player (id, main_character, cards) {
-    // PUBLIC MEMBERS
+  var Player = function Player (id, main_character, card_stack) {
+    // CONSTANT PUBLIC MEMBERS
     this.id = id;
     this.main_character = main_character;
-    this.cards = cards;
+    this.card_stack = card_stack;
+
+    // VOLATILE PUBLIC MEMBERS
+    this.hand_cards = null;
   };
 
   var GameState = function GameState (db) {
@@ -131,7 +136,16 @@ var GameState = function () {
 
     this.add_new_player = function (client_id, main_character, cards) {
       var player_id = s.players.length + 1;
-      var player = new Player(player_id, main_character, cards);
+      // Give unique instance ID to each card
+      var cards_clone = [];
+      for (var i = 0; i < cards.length; i++) {
+        var c = new Card(cards[i].id, cards[i].name);
+        c.instance_id = player_id * 10000 + i;
+        cards_clone.push(c);
+      }
+      console.log(cards_clone);
+
+      var player = new Player(player_id, main_character, cards_clone);
       s.players.push(player);
       s.player_is_init.push(false);
       s.player_to_client[String(player_id)] = client_id;
@@ -149,6 +163,8 @@ var GameState = function () {
     };
     this.init_character.rpc_enabled = true;
 
+    // TODO: random shuffle
+    // TODO: draw card
     // finish init and start the game
     this.start_game = function (first_player_id) {
       s.main = GameState.MainStateEnum.GAME;

@@ -40,9 +40,7 @@ function handler (req, res) {
   });
 };
 
-var data_characters = require("./data/characters");
-var data_cards = require("./data/cards");
-var core_server = new CoreServer(data_characters, data_cards);
+var core_server = new CoreServer();
 
 io.on('connection', function (socket) {
   socket.on('login', function (client_id) {
