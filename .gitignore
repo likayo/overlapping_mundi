@@ -76,3 +76,4 @@ $RECYCLE.BIN/
 
 # Customized
 img/
+*.sublime-workspace
